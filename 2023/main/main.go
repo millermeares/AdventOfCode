@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	days "days/02"
+	"days/two"
 	"fmt"
 	"os"
 )
@@ -13,7 +13,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	days.SolveFewestCubes(input)
+	two.SolveFewestCubes(input)
 }
 
 func readInputIntoList(day string) ([]string, error) {

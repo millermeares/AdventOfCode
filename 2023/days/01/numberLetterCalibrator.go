@@ -1,4 +1,4 @@
-package days
+package one
 
 func toNumberSet(input string) string {
 	transformed := ""
