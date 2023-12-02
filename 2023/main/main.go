@@ -13,7 +13,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	days.Solve(input)
+	days.SolveFewestCubes(input)
 }
 
 func readInputIntoList(day string) ([]string, error) {
