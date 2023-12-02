@@ -7,5 +7,5 @@ import (
 
 func main() {
 	fmt.Println("maining")
-	days.SolveOne()
+	days.SolveCalibration()
 }
