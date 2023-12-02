@@ -7,7 +7,15 @@ import (
 	"unicode"
 )
 
-func SolveCalibration() {
+func SolveConsideringOnlyNumbers() {
+	solve(getCalibrationValue)
+}
+
+func SolveConsideringLetters() {
+	solve(getCalibrationValueWithLetters)
+}
+
+func solve(calibrator func(input string) int) {
 	fmt.Println("Solving calibration")
 	input, err := readInputIntoList()
 	if err != nil {
@@ -18,8 +26,7 @@ func SolveCalibration() {
 	total := 0
 
 	for _, line := range input {
-		transformedLine := toNumberSet(line)
-		calibratedValue := getCalibrationValue(transformedLine)
+		calibratedValue := calibrator(line)
 		total += calibratedValue
 	}
 
