@@ -13,7 +13,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	answer := three.SolveEngineSchematic(input)
+	answer := three.SolveGearRatio(input)
 	fmt.Println("Answer: ", answer)
 }
 
