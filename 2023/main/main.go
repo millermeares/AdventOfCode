@@ -2,18 +2,19 @@ package main
 
 import (
 	"bufio"
-	"days/two"
+	"days/three"
 	"fmt"
 	"os"
 )
 
 func main() {
-	input, err := readInputIntoList("02")
+	input, err := readInputIntoList("03")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	two.SolveFewestCubes(input)
+	answer := three.SolveEngineSchematic(input)
+	fmt.Println("Answer: ", answer)
 }
 
 func readInputIntoList(day string) ([]string, error) {
