@@ -2,18 +2,18 @@ package main
 
 import (
 	"bufio"
-	"days/three"
+	"days/four"
 	"fmt"
 	"os"
 )
 
 func main() {
-	input, err := readInputIntoList("03")
+	input, err := readInputIntoList("04")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	answer := three.SolveGearRatio(input)
+	answer := four.SolveScratchCardAccumulator(input)
 	fmt.Println("Answer: ", answer)
 }
 

@@ -5,3 +5,4 @@ use ./main
 use ./days/01
 use ./days/02
 use ./days/03
+use ./days/04
