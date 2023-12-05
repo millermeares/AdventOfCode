@@ -13,7 +13,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	answer := five.SolveClosestLocation(input)
+	answer := five.SolveClosestLocationWithRange_BruteForce(input)
 	fmt.Println("Answer: ", answer)
 }
 
