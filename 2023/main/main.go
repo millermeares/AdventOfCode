@@ -2,18 +2,18 @@ package main
 
 import (
 	"bufio"
-	"days/four"
+	"days/five"
 	"fmt"
 	"os"
 )
 
 func main() {
-	input, err := readInputIntoList("04")
+	input, err := readInputIntoList("05")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	answer := four.SolveScratchCardAccumulator(input)
+	answer := five.SolveClosestLocation(input)
 	fmt.Println("Answer: ", answer)
 }
 
