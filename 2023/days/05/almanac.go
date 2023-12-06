@@ -27,7 +27,6 @@ func (a Almanac) getMapping(source string, destination string, sourceValue int) 
 	if source == destination {
 		return sourceValue // source is destination, done.
 	}
-	// todo: figure out return case. maybe when source = destination?
 	// this relies on the idea that there is only one per source.
 	rm := a.getRangeMapForSource(source)
 	destinationValue := rm.getDestinationMapping(sourceValue)

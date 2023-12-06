@@ -24,9 +24,7 @@ func (a Almanac) getLowestLocation() int {
 // the fundamental reality is that iterating over the seed inputs is going to be challenging.
 // even something as simple as printing the seed input is CPU intensive.
 // i need to either do this deterministically O(1) or *seriously* filter the input.
-// there is a finite amount of ranges. map ranges to each other? then iterate over those ranges searching for matches?
-// input: range. output: []range that returns the ranges that those maps are split into. not too crazy.
-// then for each resultRange in []range, do the same operation.
+// the fanout solution ended up making it O(ranges input), rather than O(total numbers)
 func SolveClosestLocationWithRange(input []string) int {
 	a := parseAlmanac(input)
 	seedRanges := getSeedRangesFromSeeds(a.seeds)
