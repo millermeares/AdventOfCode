@@ -1,7 +1,6 @@
 package five
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -10,42 +9,26 @@ func SolveClosestLocation(input []string) int {
 	return a.getLowestLocation()
 }
 
-func SolveClosestLocationWithRange_BruteForce(input []string) int {
-	a := parseAlmanac(input)
-	seedRanges := getSeedRangesFromSeeds(a.seeds)
-	lowest := math.MaxInt
-	selectionSeedMap := map[int]int{}
-	for rangeNum, sr := range seedRanges {
-		fmt.Println("Evaluating range num", rangeNum)
-		for seed := sr.beginning; seed < sr.beginning+sr.length; seed++ {
-			location := getLocationOfSeed(&a, seed, selectionSeedMap)
-			if lowest > location {
-				lowest = location
-			}
-		}
-	}
-	return lowest
-}
-
-func getLocationOfSeed(a *Almanac, seed int, seedLocationMap map[int]int) int {
-	val, exists := seedLocationMap[seed]
-	if exists {
-		return val
-	}
-	val = a.getMapping("seed", "location", seed)
-	seedLocationMap[seed] = val
-	return val
-
-}
-
+// part 1
 func (a Almanac) getLowestLocation() int {
 	lowest := math.MaxInt
 	for _, seed := range a.seeds {
 		location := a.getMapping("seed", "location", seed)
-
 		if location < lowest {
 			lowest = location
 		}
 	}
 	return lowest
+}
+
+// the fundamental reality is that iterating over the seed inputs is going to be challenging.
+// even something as simple as printing the seed input is CPU intensive.
+// i need to either do this deterministically O(1) or *seriously* filter the input.
+// there is a finite amount of ranges. map ranges to each other? then iterate over those ranges searching for matches?
+// input: range. output: []range that returns the ranges that those maps are split into. not too crazy.
+// then for each resultRange in []range, do the same operation.
+func SolveClosestLocationWithRange(input []string) int {
+	a := parseAlmanac(input)
+	seedRanges := getSeedRangesFromSeeds(a.seeds)
+	return lowestLocationFromRanges(&a, seedRanges)
 }

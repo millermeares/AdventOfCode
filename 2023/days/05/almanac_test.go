@@ -100,13 +100,8 @@ func TestGetMapping_Examples(t *testing.T) {
 		"56 93 4",
 	}
 	a := parseAlmanac(input)
-	// seems like the issue is with the ranges.
 	assert.Equal(t, 7, len(a.rangeMaps))
-	assert.Equal(t, "temperature", a.rangeMaps[5].from)
-	assert.Equal(t, 2, len(a.rangeMaps[0].ranges))
-	assert.Equal(t, 4, len(a.rangeMaps[2].ranges))
 
-	assert.Equal(t, 50, a.rangeMaps[0].ranges[1].source)
 	seed1 := a.getMapping("seed", "soil", 79)
 	assert.Equal(t, 81, seed1)
 }

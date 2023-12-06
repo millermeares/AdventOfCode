@@ -1,16 +1,11 @@
 package five
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
 
-// numbers and seeds are used to identify fertizilizer, water, and seed type
-// seeds that need to be planted: seeds.
-
-// each line is a range.
-// 50, 98, 2
-// 50=>98, 51=>99
 type Almanac struct {
 	seeds     []int
 	rangeMaps []*RangeMap
@@ -26,7 +21,6 @@ type Range struct {
 	destination int
 	source      int
 	length      int
-	raw         string
 }
 
 func (a Almanac) getMapping(source string, destination string, sourceValue int) int {
@@ -41,7 +35,7 @@ func (a Almanac) getMapping(source string, destination string, sourceValue int) 
 }
 
 func (a *Almanac) getRangeMapForSource(source string) *RangeMap {
-	for _, rm := range a.rangeMaps { // maybe a.rangeMaps is being copied here?
+	for _, rm := range a.rangeMaps {
 		if rm.from == source {
 			return rm
 		}
@@ -70,6 +64,9 @@ func parseAlmanac(input []string) Almanac {
 		r := parseRange(line)
 		rm := a.getRangeMapForSource(recentMapSource)
 		rm.ranges = append(rm.ranges, r)
+	}
+	for _, rm := range a.rangeMaps {
+		rm.sortRanges()
 	}
 	return a
 }
@@ -110,7 +107,6 @@ func parseRange(input string) Range {
 		destination: destination,
 		source:      source,
 		length:      length,
-		raw:         input,
 	}
 }
 
@@ -134,4 +130,11 @@ func (r Range) getMapping(sourceVal int) int {
 	// only call if already in mapping range.
 	diff := sourceVal - r.source
 	return r.destination + diff
+}
+
+// sort by source ascending
+func (rm *RangeMap) sortRanges() {
+	sort.SliceStable(rm.ranges, func(i, j int) bool {
+		return rm.ranges[i].source < rm.ranges[j].source
+	})
 }
