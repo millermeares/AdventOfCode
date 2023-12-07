@@ -2,18 +2,18 @@ package main
 
 import (
 	"bufio"
-	"days/six"
+	"days/seven"
 	"fmt"
 	"os"
 )
 
 func main() {
-	input, err := readInputIntoList("06")
+	input, err := readInputIntoList("07")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	answer := six.SolveWaysToBeatRecordSingleRace(input)
+	answer := seven.SolveCamelCardWinnings(input)
 	fmt.Println("Answer: ", answer)
 }
 
