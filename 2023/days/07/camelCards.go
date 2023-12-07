@@ -7,6 +7,10 @@ import (
 	"unicode"
 )
 
+const (
+	jokerKey = 1
+)
+
 type Hand struct {
 	cards []int // could also do based on int. convert to int from A,K,Q,J in parsing?
 	bid   int
@@ -36,7 +40,13 @@ func (h *Hand) getStrength() int {
 		countByCard[c] = v + 1
 	}
 
-	if len(countByCard) == 1 {
+	_, jackIsJoker := countByCard[jokerKey]
+	// only care about if jack is joker *if* there are cards of "joker" value.
+	if jackIsJoker {
+		addJokerCountToHighestCard(countByCard)
+	}
+
+	if len(countByCard) == 1 || len(countByCard) == 0 { // only 1 other card or 1 non-joker.
 		// five of a kind.
 		return 6
 	}
@@ -131,4 +141,22 @@ func cardToInt(r rune) int {
 		return 10
 	}
 	panic("Unexpected input" + string(r))
+}
+
+func addJokerCountToHighestCard(countByCard map[int]int) {
+	jokerCount := countByCard[jokerKey]
+	delete(countByCard, jokerKey) // don't directly consider it.
+
+	if jokerCount != 0 && len(countByCard) == 0 {
+		countByCard[jokerKey] = jokerCount
+	}
+	maxKey := 0
+	maxValue := 0
+	for k, v := range countByCard {
+		if v > maxValue {
+			maxKey = k
+			maxValue = v
+		}
+	}
+	countByCard[maxKey] += jokerCount
 }

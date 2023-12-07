@@ -1,23 +1,23 @@
 package one
 
-import (
-	"fmt"
-)
+import "days"
 
-func SolveConsideringOnlyNumbers(input []string) {
-	solve(input, getCalibrationValue)
+func GetDay() days.Day {
+	return days.MakeDay(Part1, Part2, "01")
+}
+func Part1(input []string) int {
+	return solve(input, getCalibrationValue)
 }
 
-func SolveConsideringLetters(input []string) {
-	solve(input, getCalibrationValueWithLetters)
+func Part2(input []string) int {
+	return solve(input, getCalibrationValueWithLetters)
 }
 
-func solve(input []string, calibrator func(input string) int) {
+func solve(input []string, calibrator func(input string) int) int {
 	total := 0
 	for _, line := range input {
 		calibratedValue := calibrator(line)
 		total += calibratedValue
 	}
-
-	fmt.Println("Calibration value: ", total)
+	return total
 }

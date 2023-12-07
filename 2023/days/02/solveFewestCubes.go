@@ -1,11 +1,8 @@
 package two
 
-import "fmt"
-
-func SolveFewestCubes(input []string) {
+func Part2(input []string) int {
 	games := parseGames(input)
-	power := solveFewestCubesPower(games)
-	fmt.Println("Fewest cubes power: ", power)
+	return solveFewestCubesPower(games)
 }
 
 func solveFewestCubesPower(games []Game) int {

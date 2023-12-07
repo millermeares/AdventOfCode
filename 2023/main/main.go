@@ -8,13 +8,17 @@ import (
 )
 
 func main() {
-	input, err := readInputIntoList("07")
+	day := seven.GetDay() // whenver you want to run a different day, change this line.
+
+	input, err := readInputIntoList(day.DayNum())
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	answer := seven.SolveCamelCardWinnings(input)
-	fmt.Println("Answer: ", answer)
+	part1Answer := day.Part1(input)
+	fmt.Println("Part 1:", part1Answer)
+	part2Answer := day.Part2(input)
+	fmt.Println("Part 2:", part2Answer)
 }
 
 func readInputIntoList(day string) ([]string, error) {

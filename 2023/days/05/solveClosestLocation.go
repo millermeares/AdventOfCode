@@ -1,15 +1,19 @@
 package five
 
 import (
+	"days"
 	"math"
 )
+
+func GetDay() days.Day {
+	return days.MakeDay(SolveClosestLocation, SolveClosestLocationWithRange, "05")
+}
 
 func SolveClosestLocation(input []string) int {
 	a := parseAlmanac(input)
 	return a.getLowestLocation()
 }
 
-// part 1
 func (a Almanac) getLowestLocation() int {
 	lowest := math.MaxInt
 	for _, seed := range a.seeds {

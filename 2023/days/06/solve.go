@@ -1,5 +1,11 @@
 package six
 
+import "days"
+
+func GetDay() days.Day {
+	return days.MakeDay(SolveWaysToBeatRecord, SolveWaysToBeatRecordSingleRace, "06")
+}
+
 func SolveWaysToBeatRecord(input []string) int {
 	races := parseInput(input)
 	answer := 1

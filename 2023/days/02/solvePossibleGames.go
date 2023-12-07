@@ -1,7 +1,7 @@
 package two
 
 import (
-	"fmt"
+	"days"
 	"strconv"
 	"strings"
 )
@@ -12,16 +12,19 @@ const (
 	Green = "green"
 )
 
+func GetDay() days.Day {
+	return days.MakeDay(Part1, Part2, "02")
+}
+
 func addColorToMap(colorCounts map[string]int, rawColor string) {
 	colorCount := strings.Split(rawColor, " ")
 	parsedCount, _ := strconv.Atoi(colorCount[0]) // swallow error on purpose
 	colorCounts[colorCount[1]] = parsedCount
 }
 
-func SolvePossibleGames(input []string) {
+func Part1(input []string) int {
 	games := parseGames(input)
-	idSum := solvePossibleGames(games)
-	fmt.Println("ID Sum: ", idSum)
+	return solvePossibleGames(games)
 }
 
 func solvePossibleGames(games []Game) int {

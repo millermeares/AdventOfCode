@@ -1,6 +1,13 @@
 package three
 
-import "strconv"
+import (
+	"days"
+	"strconv"
+)
+
+func GetDay() days.Day {
+	return days.MakeDay(SolveEngineSchematic, SolveGearRatio, "03")
+}
 
 func SolveEngineSchematic(input []string) int {
 	e := parseEngineSchematic(input)
