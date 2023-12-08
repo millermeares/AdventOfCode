@@ -9,13 +9,18 @@ type Node struct {
 }
 
 func (n *Node) getStepNodeId(step byte) string {
-	if step != 'R' && step != 'L' {
-		panic("Unexpected input: " + string(step))
-	}
 	if step == 'R' {
 		return n.rightNodeId
 	}
 	return n.leftNodeId
+}
+
+func (n *Node) endsWithA() bool {
+	return n.id[2] == 'A'
+}
+
+func (n *Node) endsWithZ() bool {
+	return n.id[2] == 'Z'
 }
 
 func parseInput(input []string) map[string]Node {
