@@ -2,6 +2,7 @@ package eight
 
 import (
 	"days"
+	"fmt"
 )
 
 func GetDay() days.Day {
@@ -27,16 +28,35 @@ func Part2(input []string) int {
 	graph := parseInput(input[2:])
 
 	nodes := getNodesEndingWithA(graph)
-	stepCount := 0
-	for ; !allNodesEndInZ(nodes); stepCount++ {
-		stepToTake := steps[stepCount%len(steps)] // stepCount mod len(steps)
-		for i := 0; i < len(nodes); i++ {
-			nextNodeId := nodes[i].getStepNodeId(stepToTake)
-			nodes[i] = graph[nextNodeId]
-		}
+	fmt.Println(allNodesEndInZ(nodes))
+	var cycles []*Cycle
+	for _, node := range nodes {
+		c := getCycle(node, graph, steps)
+		cycles = append(cycles, &c)
 	}
-	// for each A node to Z node, can i answer the question: "how many steps until it gets to a Z
-	return stepCount
+	printCycles(cycles, graph, steps)
+
+	stepsBeforeCycleEntry := makeCyclesStartWhenLatestStarts(cycles, graph, steps)
+	lcm := getLcmConsiderPossibleZs(cycles, graph, steps)
+	return lcm + stepsBeforeCycleEntry
+}
+
+func getLcmConsiderPossibleZs(cycles []*Cycle, graph map[string]Node, steps string) int {
+	var zs []int
+	for _, c := range cycles {
+		zs = append(zs, c.zInCycle(graph, steps)[0]) // hard-coded to only have 1 Z per cycle. I know this is true from my input but is hacky.
+	}
+	// LCM of just the Zs isn't enough.
+	// that would be enough if the Z was reliably the last element of each cycle.
+	return LCM(zs[0], zs[1], zs[2:])
+
+}
+
+func printCycles(cycles []*Cycle, graph map[string]Node, steps string) {
+	for _, c := range cycles {
+		fmt.Println(c)
+		fmt.Println(c.zInCycle(graph, steps))
+	}
 }
 
 func getNodesEndingWithA(graph map[string]Node) []Node {
@@ -50,10 +70,32 @@ func getNodesEndingWithA(graph map[string]Node) []Node {
 }
 
 func allNodesEndInZ(nodes []Node) bool {
+	zCount := 0
 	for _, node := range nodes {
-		if !node.endsWithZ() {
-			return false
+		if node.endsWithZ() {
+			// fmt.Println("Node at index ending in Z", idx)
+			zCount++
 		}
 	}
-	return true
+	return zCount == len(nodes)
+}
+
+// copy-pasted from https://go.dev/play/p/SmzvkDjYlb and amended
+func GCD(a, b int) int {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+func LCM(a, b int, integers []int) int {
+	result := a * b / GCD(a, b)
+
+	for i := 0; i < len(integers); i++ {
+		result = LCM(result, integers[i], integers[i+1:])
+	}
+
+	return result
 }
