@@ -28,35 +28,31 @@ func Part2(input []string) int {
 	graph := parseInput(input[2:])
 
 	nodes := getNodesEndingWithA(graph)
-	fmt.Println(allNodesEndInZ(nodes))
-	var cycles []*Cycle
+	var cycles []Cycle
 	for _, node := range nodes {
 		c := getCycle(node, graph, steps)
-		cycles = append(cycles, &c)
-	}
-	printCycles(cycles, graph, steps)
-
-	stepsBeforeCycleEntry := makeCyclesStartWhenLatestStarts(cycles, graph, steps)
-	lcm := getLcmConsiderPossibleZs(cycles, graph, steps)
-	return lcm + stepsBeforeCycleEntry
-}
-
-func getLcmConsiderPossibleZs(cycles []*Cycle, graph map[string]Node, steps string) int {
-	var zs []int
-	for _, c := range cycles {
-		zs = append(zs, c.zInCycle(graph, steps)[0]) // hard-coded to only have 1 Z per cycle. I know this is true from my input but is hacky.
-	}
-	// LCM of just the Zs isn't enough.
-	// that would be enough if the Z was reliably the last element of each cycle.
-	return LCM(zs[0], zs[1], zs[2:])
-
-}
-
-func printCycles(cycles []*Cycle, graph map[string]Node, steps string) {
-	for _, c := range cycles {
 		fmt.Println(c)
 		fmt.Println(c.zInCycle(graph, steps))
+		cycles = append(cycles, c)
 	}
+
+	return getMinOverlappingZ(cycles, graph, steps)
+}
+
+func getMinOverlappingZ(cycles []Cycle, graph map[string]Node, steps string) int {
+	var rates []int
+	maxOffset := 0
+	for _, c := range cycles {
+		zIndex := c.zInCycle(graph, steps)[0] // hard-coded to only have 1 Z per cycle. I know this is true from my input but is hacky.
+		zOffset := zIndex + c.stepsBeforeCycleEntry
+		if zOffset > maxOffset {
+			maxOffset = zOffset
+		}
+		rates = append(rates, c.length)
+	}
+	fmt.Println("Calculating LCM of rates", rates)
+	fmt.Println("Adding max offset", maxOffset)
+	return LCM(rates[0], rates[1], rates[2:]) + maxOffset
 }
 
 func getNodesEndingWithA(graph map[string]Node) []Node {
@@ -67,17 +63,6 @@ func getNodesEndingWithA(graph map[string]Node) []Node {
 		}
 	}
 	return nodes
-}
-
-func allNodesEndInZ(nodes []Node) bool {
-	zCount := 0
-	for _, node := range nodes {
-		if node.endsWithZ() {
-			// fmt.Println("Node at index ending in Z", idx)
-			zCount++
-		}
-	}
-	return zCount == len(nodes)
 }
 
 // copy-pasted from https://go.dev/play/p/SmzvkDjYlb and amended

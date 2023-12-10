@@ -6,6 +6,7 @@ type Cycle struct {
 	length                int
 }
 
+// intention is to return the index at which a Z is encountered, starting at c.originalNode.
 func (c Cycle) zInCycle(graph map[string]Node, steps string) []int {
 	var zIdxs []int
 	currentNode := c.originalNode
@@ -20,27 +21,8 @@ func (c Cycle) zInCycle(graph map[string]Node, steps string) []int {
 	return zIdxs
 }
 
-func makeCyclesStartWhenLatestStarts(cycles []*Cycle, graph map[string]Node, steps string) int {
-	max := 0
-	for _, c := range cycles {
-		if c.stepsBeforeCycleEntry > max {
-			max = c.stepsBeforeCycleEntry
-		}
-	}
-
-	for _, c := range cycles {
-		toIncrement := max - c.stepsBeforeCycleEntry
-		for ; toIncrement > 0; toIncrement-- {
-			step := steps[c.stepsBeforeCycleEntry%len(steps)]
-			nextNode := c.originalNode.getStepNodeId(step)
-			c.originalNode = graph[nextNode]
-			c.stepsBeforeCycleEntry = c.stepsBeforeCycleEntry + 1
-		}
-	}
-	return max
-}
-
-func getCycle(currentNode Node, graph map[string]Node, steps string) Cycle {
+func getCycle(startNode Node, graph map[string]Node, steps string) Cycle {
+	currentNode := startNode
 	visited := map[string][]Visit{} // record "steps" at which the node was visited
 	stepCount := 0
 	for ; true; stepCount++ {

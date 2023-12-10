@@ -10,3 +10,5 @@ use ./days/05
 use ./days/06
 use ./days/07
 use ./days/08
+use ./days/09
+use ./days/10
