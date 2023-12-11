@@ -2,7 +2,6 @@ package eleven
 
 import (
 	"days"
-	"math"
 	"strings"
 )
 
@@ -11,30 +10,13 @@ func GetDay() days.Day {
 }
 
 type Point struct {
-	x int
-	y int
-}
-
-func (p Point) getDistanceBetween(other Point) int {
-	xDiff := int(math.Abs(float64(p.x - other.x)))
-	yDiff := int(math.Abs(float64(p.y - other.y)))
-	return xDiff + yDiff
+	id int
+	x  int
+	y  int
 }
 
 func SolveGalaxyDistance(input []string) int {
-	// any rows or columns that contain no galaxies should be twice as big.
-	rowsExpanded := expandAbsentGalaxyRows(input)
-	columnsExpanded := expandAbsentGalaxyColumns(rowsExpanded)
-	galaxies := getGalaxies(columnsExpanded)
-	sum := 0
-	for i := 0; i < len(galaxies)-1; i++ {
-		for j := i + 1; j < len(galaxies); j++ {
-			galaxyOne := galaxies[i]
-			galaxyTwo := galaxies[j]
-			sum += galaxyOne.getDistanceBetween(galaxyTwo)
-		}
-	}
-	return sum
+	return solveDynamicGalaxyWeight(input, 2)
 }
 
 func getGalaxies(input []string) []Point {
@@ -42,31 +24,13 @@ func getGalaxies(input []string) []Point {
 	for y, line := range input {
 		for x, c := range line {
 			if c == '#' {
-				points = append(points, Point{x: x, y: y})
+				points = append(points, Point{x: x, y: y, id: len(points) + 1})
+				// p := points[len(points)-1]
+				// fmt.Println("Id", p.id, "is at y", p.y, "x", p.x)
 			}
 		}
 	}
 	return points
-}
-
-func expandAbsentGalaxyColumns(input []string) []string {
-	for i := 0; i < len(input[0]); i++ {
-		// for each character
-		if columnHasGalaxy(i, input) {
-			continue // no modifications needed
-		}
-		// need to add a column here.
-		input = addPeriodColumn(i, input)
-		i++ // prevent double counting none-galaxy columns.
-	}
-	return input
-}
-
-func addPeriodColumn(col int, input []string) []string {
-	for i := 0; i < len(input); i++ {
-		input[i] = input[i][:col] + "." + input[i][col:]
-	}
-	return input
 }
 
 func columnHasGalaxy(col int, input []string) bool {
@@ -76,25 +40,6 @@ func columnHasGalaxy(col int, input []string) bool {
 		}
 	}
 	return false
-}
-
-func expandAbsentGalaxyRows(input []string) []string {
-	var expanded []string
-	for _, line := range input {
-		if !rowHasGalaxy(line) {
-			expanded = append(expanded, getRowOfPeriods(len(line)))
-		}
-		expanded = append(expanded, line)
-	}
-	return expanded
-}
-
-func getRowOfPeriods(l int) string {
-	str := ""
-	for i := 0; i < l; i++ {
-		str += "."
-	}
-	return str
 }
 
 func rowHasGalaxy(line string) bool {
@@ -107,14 +52,18 @@ func Part2(input []string) int {
 
 func solveDynamicGalaxyWeight(input []string, emptyWeight int) int {
 	rowCosts := getRowCosts(input, emptyWeight)
+	// fmt.Println("r costs", rowCosts)
 	columnCosts := getColumnCosts(input, emptyWeight)
+	// fmt.Println("c costs", columnCosts)
 	galaxies := getGalaxies(input)
 	sum := 0
 	for i := 0; i < len(galaxies)-1; i++ {
 		for j := i + 1; j < len(galaxies); j++ {
 			galaxyOne := galaxies[i]
 			galaxyTwo := galaxies[j]
-			sum += galaxyOne.getWeightedCost(galaxyTwo, rowCosts, columnCosts)
+			weightedCost := galaxyOne.getWeightedCost(galaxyTwo, rowCosts, columnCosts)
+			// fmt.Println("Cost from", galaxyOne.id, "to", galaxyTwo.id, "is", weightedCost)
+			sum += weightedCost
 		}
 	}
 	return sum
@@ -125,30 +74,36 @@ func (p Point) getWeightedCost(other Point, rowCosts []int, colCosts []int) int 
 }
 
 func getColTravelCosts(p1 Point, p2 Point, colCosts []int) int {
-	smallerY := p1.y
-	largerY := p2.y
-	if p2.y < p1.y {
-		largerY = p1.y
-		smallerY = p2.y
+	smallerX := p1.x
+	largerX := p2.x
+	if smallerX > largerX {
+		temp := smallerX
+		smallerX = largerX
+		largerX = temp
 	}
 	sum := 0
-	for i := smallerY; i < largerY; i++ {
+	for i := smallerX + 1; i <= largerX; i++ {
+		// fmt.Println("Adding cost", colCosts[i], "for traversal on column", i)
 		sum += colCosts[i]
 	}
+	// fmt.Println("Column travel", sum)
 	return sum
 }
 
 func getRowTravelCosts(p1 Point, p2 Point, rowCosts []int) int {
-	smallerX := p1.x
-	largerX := p2.x
-	if p2.x < p1.x {
-		largerX = p1.x
-		smallerX = p2.x
+	smallerY := p1.y
+	largerY := p2.y
+	if smallerY > largerY {
+		temp := smallerY
+		smallerY = largerY
+		largerY = temp
 	}
 	sum := 0
-	for i := smallerX; i < largerX; i++ {
+	for i := smallerY + 1; i <= largerY; i++ {
+		// fmt.Println("Adding cost", rowCosts[i], "for traversal on row", i)
 		sum += rowCosts[i]
 	}
+	// fmt.Println("Row travel", sum)
 	return sum
 }
 
@@ -173,3 +128,9 @@ func getColumnCosts(input []string, emptyGalaxyWeight int) []int {
 	}
 	return costs
 }
+
+// func printLines(input []string) {
+// 	for _, line := range input {
+// 		fmt.Println(line)
+// 	}
+// }
