@@ -29,6 +29,7 @@ func Part2(input []string) int {
 	path = expandPoints(path)
 	fmt.Println(path)
 	input = expandInput(input, path)
+
 	printLineByLine(input)
 	pathMap := getPathMap(input, path)
 
@@ -45,6 +46,14 @@ func Part2(input []string) int {
 		}
 	}
 	return trappedPoints
+}
+
+func getExpandedInput(input []string) []string {
+	start := getStart(input)
+	path := []Point{}
+	path = getPointsInPipe(input, start, start, path)
+	path = expandPoints(path)
+	return expandInput(input, path)
 }
 
 func expandPoints(points []Point) []Point {
@@ -72,17 +81,24 @@ func expandInput(input []string, eps []Point) []string {
 
 	// ok, now need to connect the pipes in each loop, according to the schematics?
 	for i := 0; i < len(eps)-1; i++ {
-		// the difference between each consecutive pipe is either an xChange or a yChange.
-
 		xChange := (eps[i].x - eps[i+1].x) / 2
 		yChange := (eps[i].y - eps[i+1].y) / 2
 		c := '-'
 		if yChange != 0 {
 			c = '|'
 		}
-		expanded[eps[i+1].y+yChange] = replaceAtIndex(expanded[eps[i].y+yChange], c, eps[i].x+xChange)
-
+		expanded[eps[i+1].y+yChange] = replaceAtIndex(expanded[eps[i+1].y+yChange], c, eps[i+1].x+xChange)
 	}
+	// handle connecting last back to start.
+	s := eps[0]
+	l := eps[len(eps)-1]
+	xChange := (l.x - s.x) / 2
+	yChange := (l.y - s.y) / 2
+	c := '-'
+	if yChange != 0 {
+		c = '|'
+	}
+	expanded[s.y+yChange] = replaceAtIndex(expanded[s.y+yChange], c, s.x+xChange)
 	return expanded
 }
 
@@ -91,6 +107,7 @@ func replaceAtIndex(in string, r rune, i int) string {
 	out[i] = r
 	return string(out)
 }
+
 func isPointTrappedByLoop(maze []string, p Point, loop [][]bool, visited [][]bool) bool {
 	if p.isOnEdge(maze) {
 		return false
