@@ -54,11 +54,10 @@ func isPointTrappedByLoop(maze []string, p Point, loop [][]bool, visited [][]boo
 	neighbors := getNeighbors(maze, p)
 	for _, neighbor := range neighbors {
 		if visited[neighbor.y][neighbor.x] {
-			fmt.Println(neighbor, "already visited")
 			continue // already evaluated.
 		}
 		if loop[neighbor.y][neighbor.x] {
-			fmt.Println(neighbor, "on loop")
+			// i think here is where it gets tricky because of the in-between?
 			continue // on loop.
 		}
 		neighborTrapped := isPointTrappedByLoop(maze, neighbor, loop, visited)
@@ -113,7 +112,6 @@ func getRestOfPipeLength(maze []string, prev Point, current Point, start Point) 
 }
 
 func getPointsInPipe(maze []string, current Point, start Point, traversed []Point) []Point {
-	fmt.Println("Traversed:", traversed, "Current", current)
 	if len(traversed) != 0 && current == start {
 		return traversed
 	}
@@ -122,7 +120,6 @@ func getPointsInPipe(maze []string, current Point, start Point, traversed []Poin
 		lastPoint = traversed[len(traversed)-1]
 	}
 	nextPoint := getNextStep(maze, lastPoint, current)
-	fmt.Println("Next point", nextPoint)
 	return getPointsInPipe(maze, nextPoint, start, append(traversed, current))
 }
 
