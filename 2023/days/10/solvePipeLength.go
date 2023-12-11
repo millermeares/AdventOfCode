@@ -33,7 +33,6 @@ func countTrappedSquares(input []string) int {
 	trappedPoints := 0
 	path = getPointsInPipe(input, start, start, path)
 	pathMap := getPathMap(input, path)
-	printBoolMap(pathMap)
 	for y, line := range input {
 		for x := range line {
 			// only evaluate points not on the loop.
@@ -42,14 +41,43 @@ func countTrappedSquares(input []string) int {
 				continue
 			}
 			p := Point{x: x, y: y}
-			fmt.Println("Evaluating", p)
+			// fmt.Println("Evaluating", p)
 			visited := boolArrayOfSize(input)
-			if isPointTrappedByLoop(input, p, pathMap, visited) {
+			visited[p.y][p.x] = true
+			if input[p.y][p.x] != 'o' && isPointTrappedByLoop(input, p, pathMap, visited) {
 				trappedPoints++
 			}
 		}
 	}
 	return trappedPoints
+}
+
+func isPointTrappedByLoop(maze []string, p Point, loop [][]bool, visited [][]bool) bool {
+	// fmt.Println("Evaluating if trapped in loop", p)
+	if p.isOnEdge(maze) {
+		return false
+	}
+	isTrapped := true
+	neighbors := getNeighbors(maze, p)
+	for _, neighbor := range neighbors {
+		if visited[neighbor.y][neighbor.x] {
+			// fmt.Println(neighbor, "already visited")
+			continue // already evaluated.
+		}
+		if loop[neighbor.y][neighbor.x] {
+			// fmt.Println(neighbor, "on loop")
+			continue // on loop.
+		}
+
+		visited[neighbor.y][neighbor.x] = true
+		// if any neighbors not trapped, then this point also isn't trapped.
+		neighborTrapped := isPointTrappedByLoop(maze, neighbor, loop, visited)
+		if !neighborTrapped {
+			isTrapped = neighborTrapped
+			break
+		}
+	}
+	return isTrapped
 }
 
 func getExpandedInput(input []string) []string {
@@ -111,34 +139,6 @@ func replaceAtIndex(in string, r rune, i int) string {
 	out := []rune(in)
 	out[i] = r
 	return string(out)
-}
-
-func isPointTrappedByLoop(maze []string, p Point, loop [][]bool, visited [][]bool) bool {
-	fmt.Println("Evaluating if trapped in loop", p)
-	if p.isOnEdge(maze) {
-		return false
-	}
-	isTrapped := true
-	visited[p.y][p.x] = true
-	neighbors := getNeighbors(maze, p)
-	for _, neighbor := range neighbors {
-		if visited[neighbor.y][neighbor.x] {
-			fmt.Println(neighbor, "already visited")
-			continue // already evaluated.
-		}
-		if loop[neighbor.y][neighbor.x] {
-			fmt.Println(neighbor, "on loop")
-			continue // on loop.
-		}
-		// if any neighbors not trapped, then this point also isn't trapped.
-		neighborTrapped := isPointTrappedByLoop(maze, neighbor, loop, visited)
-		if !neighborTrapped {
-			isTrapped = neighborTrapped
-			break
-		}
-	}
-	visited[p.y][p.x] = false
-	return isTrapped
 }
 
 func getNeighbors(maze []string, p Point) []Point {
@@ -286,22 +286,6 @@ func printLineByLine(input []string) {
 	fmt.Println()
 	for _, line := range input {
 		fmt.Println(line)
-	}
-	fmt.Println()
-}
-
-func printBoolMap(maze [][]bool) {
-	fmt.Println()
-	for _, line := range maze {
-		toPrint := ""
-		for _, b := range line {
-			c := "T"
-			if !b {
-				c = "F"
-			}
-			toPrint = toPrint + c
-		}
-		fmt.Println(toPrint)
 	}
 	fmt.Println()
 }

@@ -30,17 +30,9 @@ func TestSolveEncodedArea_Example1(t *testing.T) {
 		".L--J.L--J.",
 		"...........",
 	}
-	expanded := getExpandedInput(input)
-	printLineByLine(expanded)
-	start := getStart(expanded)
-	path := []Point{}
-	path = getPointsInPipe(expanded, start, start, path)
-	pathMap := getPathMap(expanded, path)
-	printBoolMap(pathMap)
 
-	enclosed := countTrappedSquares(input)
+	enclosed := Part2(input)
 	assert.Equal(t, 4, enclosed)
-	assert.Equal(t, true, false)
 }
 
 func TestSolveEncodedArea_BetweenPipes(t *testing.T) {
