@@ -26,9 +26,12 @@ func Part2(input []string) int {
 	path := []Point{}
 	trappedPoints := 0
 	path = getPointsInPipe(input, start, start, path)
+	path = expandPoints(path)
 	fmt.Println(path)
+	input = expandInput(input, path)
+	printLineByLine(input)
 	pathMap := getPathMap(input, path)
-	printNestedBool(pathMap)
+
 	for y, line := range input {
 		for x := range line {
 			if pathMap[y][x] {
@@ -44,8 +47,51 @@ func Part2(input []string) int {
 	return trappedPoints
 }
 
+func expandPoints(points []Point) []Point {
+	var expanded []Point
+	for _, p := range points {
+		expanded = append(expanded, Point{x: p.x * 2, y: p.y * 2})
+	}
+	return expanded
+}
+
+func expandInput(input []string, eps []Point) []string {
+	expanded := make([]string, len(input)*2)
+	for y := 0; y < len(input); y++ {
+		// add a "o" between each character in each line.
+		for x := 0; x < len(input[y]); x++ {
+			expanded[y*2] = expanded[y*2] + string(input[y][x])
+			expanded[y*2] = expanded[y*2] + "o"
+		}
+
+		// add a line of "o" on the "odd" lines of "expanded"
+		for x := 0; x < len(expanded[y*2]); x++ {
+			expanded[y*2+1] = expanded[y*2+1] + "o"
+		}
+	}
+
+	// ok, now need to connect the pipes in each loop, according to the schematics?
+	for i := 0; i < len(eps)-1; i++ {
+		// the difference between each consecutive pipe is either an xChange or a yChange.
+
+		xChange := (eps[i].x - eps[i+1].x) / 2
+		yChange := (eps[i].y - eps[i+1].y) / 2
+		c := '-'
+		if yChange != 0 {
+			c = '|'
+		}
+		expanded[eps[i+1].y+yChange] = replaceAtIndex(expanded[eps[i].y+yChange], c, eps[i].x+xChange)
+
+	}
+	return expanded
+}
+
+func replaceAtIndex(in string, r rune, i int) string {
+	out := []rune(in)
+	out[i] = r
+	return string(out)
+}
 func isPointTrappedByLoop(maze []string, p Point, loop [][]bool, visited [][]bool) bool {
-	// fmt.Println("Evaluating", p)
 	if p.isOnEdge(maze) {
 		return false
 	}
@@ -57,7 +103,6 @@ func isPointTrappedByLoop(maze []string, p Point, loop [][]bool, visited [][]boo
 			continue // already evaluated.
 		}
 		if loop[neighbor.y][neighbor.x] {
-			// i think here is where it gets tricky because of the in-between?
 			continue // on loop.
 		}
 		neighborTrapped := isPointTrappedByLoop(maze, neighbor, loop, visited)
@@ -211,8 +256,22 @@ func getStart(input []string) Point {
 	panic("Did not find start")
 }
 
-func printNestedBool(visited [][]bool) {
-	for _, line := range visited {
+func printLineByLine(input []string) {
+	for _, line := range input {
 		fmt.Println(line)
 	}
 }
+
+// func printBoolMap(maze [][]bool) {
+// 	for _, line := range maze {
+// 		toPrint := ""
+// 		for _, b := range line {
+// 			c := "T"
+// 			if !b {
+// 				c = "F"
+// 			}
+// 			toPrint = toPrint + c
+// 		}
+// 		fmt.Println(toPrint)
+// 	}
+// }
