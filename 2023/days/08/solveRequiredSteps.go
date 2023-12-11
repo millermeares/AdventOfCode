@@ -52,7 +52,7 @@ func getMinOverlappingZ(cycles []Cycle, graph map[string]Node, steps string) int
 	}
 	fmt.Println("Calculating LCM of rates", rates)
 	fmt.Println("Adding max offset", maxOffset)
-	return LCM(rates[0], rates[1], rates[2:]) + maxOffset
+	return LCM(rates[0], rates[1], rates[2:])
 }
 
 func getNodesEndingWithA(graph map[string]Node) []Node {
