@@ -1,6 +1,7 @@
 package twelve
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -8,90 +9,46 @@ import (
 func countSpringArrangements(input string) int {
 	split := strings.Split(input, " ")
 	broken := getIntList(strings.Split(split[1], ","))
-	return countValidSpringArrangements(split[0], broken)
+	memo := map[State]int{}
+	return countValidSpringArrangements(split[0], broken, memo)
 }
 
-func countValidSpringArrangements(input string, broken []int) int {
+func countValidSpringArrangements(input string, broken []int, memo map[State]int) int {
+	state := calculateState(input, broken)
+	fmt.Println("Calculating state", state, "from input", input, "and broken", broken)
+	m, exists := memo[state]
+	if exists {
+		fmt.Println("Early returning", m, "from state", state, "from memo for input", input)
+		return m
+	}
 	if isInvalidArrangement(input, broken) {
 		// if there are more
 		return 0
 	}
 	unknownIdx := firstUnknownIndex(input)
 	if unknownIdx == -1 {
-		return 1 // this is a valid combination :)
+		return 1 // this is a valid combination since there are no unknowns and it's not invalid.
 	}
 	workingSpringCase := replaceAtIndex(input, '.', unknownIdx)
-	workingSpringValidCount := countValidSpringArrangements(workingSpringCase, broken)
+	workingSpringValidCount := countValidSpringArrangements(workingSpringCase, broken, memo)
+
 	brokenSpringCase := replaceAtIndex(input, '#', unknownIdx)
-	brokenSpringValidCount := countValidSpringArrangements(brokenSpringCase, broken)
-	return workingSpringValidCount + brokenSpringValidCount
+	brokenSpringValidCount := countValidSpringArrangements(brokenSpringCase, broken, memo)
+
+	total := workingSpringValidCount + brokenSpringValidCount
+	fmt.Println("Setting", total, "from input", input, "and state", state)
+	memo[state] = total
+	return total
 }
 
-// func updateMemo(unmatchedInputIdx int, unmatchedBrokenIdx int, val int, memo map[string]map[int]int, input string) {
-// 	unmatchedInput := input[unmatchedInputIdx:]
-// 	_, inputIdxSeen := memo[unmatchedInput]
-// 	if !inputIdxSeen {
-// 		memo[unmatchedInput] = map[int]int{}
-// 	}
-// 	fmt.Println("Updating memo with val", val, "at", unmatchedInput, ",", unmatchedBrokenIdx, "for input", input)
-// 	memo[unmatchedInput][unmatchedBrokenIdx] = val
-// }
-
-// returns first index of unmatched for string input and broken array.
-// func getUnmatched(input string, broken []int) (int, int) {
-// 	unmatchedInputIdx := 0
-// 	unmatchedBrokenIdx := 0
-// 	// i need to know where in the input each of these strings exists. hm.
-// 	brokenOrUnknownSprings := strings.Fields(strings.Replace(input, ".", " ", -1))
-// 	for i := 0; i < len(brokenOrUnknownSprings); i++ {
-// 		if unmatchedBrokenIdx == len(broken) || containsUnknown(brokenOrUnknownSprings[i]) {
-// 			break // if there are no more brokens to match or any ? in this set, cannot match, so break.
-// 		}
-// 		if len(brokenOrUnknownSprings[i]) == broken[unmatchedBrokenIdx] {
-// 			unmatchedBrokenIdx++
-// 			unmatchedInputIdx = getIndexOfNthSpringSet(input, brokenOrUnknownSprings, i)
-// 			//todo: do i have to handle when inputIdx reached len(input)? maybe not, due to current isInvalid implementation.
-// 		}
-// 	}
-// 	return unmatchedInputIdx, unmatchedBrokenIdx
-// }
-
-// func getValue(k1 string, k2 int, m map[string]map[int]int) (int, bool) {
-// 	nested, e := m[k1]
-// 	if !e {
-// 		return -1, false
-// 	}
-// 	v2, e := nested[k2]
-// 	if !e {
-// 		return -1, false
-// 	}
-// 	return v2, true
-// }
-
-// // return the index of the Nth spring set in the input.
-// func getIndexOfNthSpringSet(input string, brokenSprings []string, brokenSpringIdx int) int {
-// 	inputIdx := 0
-// 	for i := 0; i < len(brokenSprings); i++ {
-// 		indexOfMatch := indexOfSubstring(input[inputIdx:], brokenSprings[i])
-// 		inputIdx = inputIdx + indexOfMatch + len(brokenSprings[i]) // inputIdx + (index of match in substring) + len(matched)
-// 	}
-// 	return inputIdx
-// }
-
-// func indexOfSubstring(str, subStr string) int {
-// 	for i := 0; i < len(str); i++ {
-// 		if str[i:i+len(subStr)] == subStr {
-// 			return i
-// 		}
-// 	}
-// 	return -1
-// }
-
+// consider iterating through the different things to find if it's illegal?
 func isInvalidArrangement(input string, broken []int) bool {
-	// ok so this is all that remains?
-	// if it contains a ?, return false? for now.
+	requiredBroken := sum(broken)
+	if countNonWorking(input) < requiredBroken {
+		return true
+	}
 	if containsUnknown(input) {
-		return false // don't mark invalid yet -
+		return false // only evaluate if no ?
 	}
 	brokenSprings := strings.Fields(strings.Replace(input, ".", " ", -1))
 	if len(brokenSprings) != len(broken) {
@@ -103,6 +60,24 @@ func isInvalidArrangement(input string, broken []int) bool {
 		}
 	}
 	return false
+}
+
+func countNonWorking(input string) int {
+	count := 0
+	for _, v := range input {
+		if v != '.' {
+			count++
+		}
+	}
+	return count
+}
+
+func sum(list []int) int {
+	sum := 0
+	for _, v := range list {
+		sum += v
+	}
+	return sum
 }
 
 func replaceAtIndex(in string, r rune, i int) string {
@@ -131,4 +106,8 @@ func getIntList(input []string) []int {
 		nums = append(nums, n)
 	}
 	return nums
+}
+
+// this represents the un-evaluated
+type State struct {
 }
