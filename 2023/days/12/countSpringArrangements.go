@@ -36,18 +36,18 @@ func countValidSpringArrangements(input string, broken []int, memo map[string]in
 		return ans
 	}
 
-	// base case.
 	if !containsUnknown(input) {
 		return oneIfValid(input, broken)
 	}
 	if canPrune(input, broken) {
 		return 0
 	}
+
 	dotIdx := firstDotIndex(input)
 	unknownIdx := firstUnknownIndex(input)
 
 	if dotIdx != -1 && dotIdx < unknownIdx {
-		// if there is a dot before unknown index, we can short circuit the problem.
+		// if there is a dot before unknown index, we cam solve the smaller problem that comes after the "."
 		matchedThrough := getMatchedThrough(input[:dotIdx], broken)
 		if matchedThrough == -1 {
 			// could be included in the pruning function.
@@ -56,15 +56,7 @@ func countValidSpringArrangements(input string, broken []int, memo map[string]in
 		return countValidSpringArrangements(input[dotIdx:], broken[matchedThrough:], memo)
 	}
 
-	brokenSpringCase := replaceAtIndex(input, '#', unknownIdx)
-
-	springBrokenCount := countValidSpringArrangements(brokenSpringCase, broken, memo)
-
-	// move to first non-# and then try to match a "broken"? to reduce search space?
-	// careful of ##?? 2 1  because ###. is not valid. but if you greedily take ##, then ?? would match "11" twice, rather than once.
-	// need to explicitly handle if "?" is coming next.
-
-	// creating two separate problems. in theory, memoization would be useful for this part.
+	// if we add a "." before unknown index, we can solve the smaller problem that comes after it.
 	workingSpringCase := replaceAtIndex(input, '.', unknownIdx)
 	matchedThrough := getMatchedThrough(workingSpringCase[:unknownIdx], broken)
 	workingSpringCount := 0
@@ -72,6 +64,9 @@ func countValidSpringArrangements(input string, broken []int, memo map[string]in
 		// only enter this block if the matching process was valid.
 		workingSpringCount = countValidSpringArrangements(workingSpringCase[unknownIdx:], broken[matchedThrough:], memo)
 	}
+
+	brokenSpringCase := replaceAtIndex(input, '#', unknownIdx)
+	springBrokenCount := countValidSpringArrangements(brokenSpringCase, broken, memo)
 
 	total := springBrokenCount + workingSpringCount
 	memo[memoKey] = total
