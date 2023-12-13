@@ -12,13 +12,6 @@ func TestCountSpringArrangements_Example1(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-// func TestCalculateState(t *testing.T) {
-// 	broken := []int{1, 1, 3}
-// 	input := "???.###"
-// 	state := calculateState(input, broken)
-// 	assert.Equal(t, State{unmatchedBrokenIndex: 0, unmatchedInputIndex: 0}, state)
-// }
-
 func TestCountSpringArrangements_Example2(t *testing.T) {
 	input := "?###???????? 3,2,1"
 	assert.Equal(t, 10, countSpringArrangements(input))
@@ -41,6 +34,7 @@ func TestCountSpringArrangements_Playground(t *testing.T) {
 	assert.Equal(t, 3, countSpringArrangements(input))
 }
 
+// WARNING: ANYTHING WITH SUM MAY HANG.
 func TestCountSpringArrangements_SumExample(t *testing.T) {
 	input := []string{
 		"???.### 1,1,3",

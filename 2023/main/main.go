@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
-	"days/thirteen"
+	"days/twelve"
 	"fmt"
 	"os"
 )
 
 func main() {
 	// whenver you want to run a different day, change this line.
-	day := thirteen.GetDay()
+	day := twelve.GetDay()
 
 	input, err := readInputIntoList(day.DayNum())
 	if err != nil {

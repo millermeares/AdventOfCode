@@ -22,7 +22,8 @@ func SumCountSpringArrangements(input []string) int {
 
 func SumCountFoldedSpringArrangements(input []string) int {
 	sum := 0
-	for _, line := range input {
+	for i, line := range input {
+		fmt.Println("Starting line", i)
 		sum += countExpandedSpringArrangement(line)
 	}
 	return sum
