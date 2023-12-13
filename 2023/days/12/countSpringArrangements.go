@@ -1,6 +1,7 @@
 package twelve
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -8,11 +9,32 @@ import (
 func countSpringArrangements(input string) int {
 	split := strings.Split(input, " ")
 	broken := getIntList(strings.Split(split[1], ","))
-	return countValidSpringArrangements(split[0], broken)
+	memo := map[string]int{}
+	return countValidSpringArrangements(split[0], broken, memo)
 }
 
-func countValidSpringArrangements(input string, broken []int) int {
+type Args struct {
+	input  string
+	broken []int
+}
+
+func (a Args) mapKey() string {
+	var sList []string
+	for _, n := range a.broken {
+		sList = append(sList, fmt.Sprintf("%d", n))
+	}
+	return a.input + " " + strings.Join(sList, ",")
+}
+
+func countValidSpringArrangements(input string, broken []int, memo map[string]int) int {
 	input = moveToFirstNonDot(input)
+
+	args := Args{input: input, broken: broken}
+	memoKey := args.mapKey()
+	ans, exists := memo[memoKey]
+	if exists {
+		return ans
+	}
 
 	// base case.
 	if !containsUnknown(input) {
@@ -31,7 +53,7 @@ func countValidSpringArrangements(input string, broken []int) int {
 			// could be included in the pruning function.
 			return 0
 		}
-		return countValidSpringArrangements(input[dotIdx:], broken[matchedThrough:])
+		return countValidSpringArrangements(input[dotIdx:], broken[matchedThrough:], memo)
 	}
 
 	brokenSpringCase := replaceAtIndex(input, '#', unknownIdx)
@@ -39,29 +61,27 @@ func countValidSpringArrangements(input string, broken []int) int {
 	springBrokenCount := 0
 	// we currently match the next set of broken things.
 	if len(broken) > 0 && broken[0] == unknownIdx+1 {
-		// fmt.Println("New # at index", unknownIdx, "in input", brokenSpringCase, "matched set", brokenSpringCase[:unknownIdx+1], "which should be of length", broken[0])
-		// input[0:unknownIdx+1] is "#", *AND* it matches broken[0].
 		// now there are 4 cases.
 		if unknownIdx == len(input)-1 {
 			// 1. we are at the end of the string. springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
-			springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
+			springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken, memo)
 		} else {
 			nextChar := input[unknownIdx+1]
 			if nextChar == '.' {
 				// 2. input[unknownIdx+1] is a period. springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
-				springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
+				springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken, memo)
 			} else if nextChar == '#' {
 				// 3. if input[unknownIdx+1] is a #, not a valid match no further evaluation needed.
 				springBrokenCount = 0
 			} else if nextChar == '?' {
 				// 4. if input[unknownIdx+1] is a ?, then unknownIdx+1 *cannot* be a #. Set it to a period and then call countValidSpringArrangements(replacedBrokenSpring, broken[1:])
 				brokenSpringCase = replaceAtIndex(brokenSpringCase, '.', unknownIdx+1)
-				springBrokenCount = countValidSpringArrangements(brokenSpringCase[unknownIdx+1:], broken[1:])
+				springBrokenCount = countValidSpringArrangements(brokenSpringCase[unknownIdx+1:], broken[1:], memo)
 				// springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
 			}
 		}
 	} else {
-		springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
+		springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken, memo)
 	}
 
 	// move to first non-# and then try to match a "broken"? to reduce search space?
@@ -74,9 +94,11 @@ func countValidSpringArrangements(input string, broken []int) int {
 	workingSpringCount := 0
 	if matchedThrough != -1 {
 		// only enter this block if the matching process was valid.
-		workingSpringCount = countValidSpringArrangements(workingSpringCase[unknownIdx:], broken[matchedThrough:])
+		workingSpringCount = countValidSpringArrangements(workingSpringCase[unknownIdx:], broken[matchedThrough:], memo)
 	}
 
+	total := springBrokenCount + workingSpringCount
+	memo[memoKey] = total
 	return springBrokenCount + workingSpringCount
 }
 
