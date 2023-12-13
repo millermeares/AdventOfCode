@@ -1,7 +1,6 @@
 package twelve
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -14,70 +13,43 @@ func countSpringArrangements(input string) int {
 }
 
 func countValidSpringArrangements(input string, broken []int, memo map[State]int) int {
-	state := calculateState(input, broken)
-	fmt.Println("Calculating state", state, "from input", input, "and broken", broken)
-	m, exists := memo[state]
-	if exists {
-		fmt.Println("Early returning", m, "from state", state, "from memo for input", input)
-		return m
+	if !containsUnknown(input) {
+		return oneIfValid(input, broken)
 	}
-	if isInvalidArrangement(input, broken) {
-		// if there are more
-		return 0
+	// state := calculateState(input, broken)
+	// m, e := memo[state]
+	// if e {
+	// 	return m
+	// }
+
+	children := getChildInputs(input)
+	sum := 0
+	for _, child := range children {
+		// if i was going to prune, i would do it here. i am not sure that is the best way.
+		sum += countValidSpringArrangements(child, broken, memo)
 	}
+
+	memo[calculateState(input, broken)] = sum //todo: if i am going to memo, it is going to be here.
+	return sum
+}
+func getChildInputs(input string) []string {
 	unknownIdx := firstUnknownIndex(input)
-	if unknownIdx == -1 {
-		return 1 // this is a valid combination since there are no unknowns and it's not invalid.
-	}
 	workingSpringCase := replaceAtIndex(input, '.', unknownIdx)
-	workingSpringValidCount := countValidSpringArrangements(workingSpringCase, broken, memo)
-
 	brokenSpringCase := replaceAtIndex(input, '#', unknownIdx)
-	brokenSpringValidCount := countValidSpringArrangements(brokenSpringCase, broken, memo)
-
-	total := workingSpringValidCount + brokenSpringValidCount
-	fmt.Println("Setting", total, "from input", input, "and state", state)
-	memo[state] = total
-	return total
+	return []string{workingSpringCase, brokenSpringCase}
 }
 
-// consider iterating through the different things to find if it's illegal?
-func isInvalidArrangement(input string, broken []int) bool {
-	requiredBroken := sum(broken)
-	if countNonWorking(input) < requiredBroken {
-		return true
-	}
-	if containsUnknown(input) {
-		return false // only evaluate if no ?
-	}
+func oneIfValid(input string, broken []int) int {
 	brokenSprings := strings.Fields(strings.Replace(input, ".", " ", -1))
 	if len(brokenSprings) != len(broken) {
-		return true
+		return 0
 	}
 	for i, springSet := range brokenSprings {
 		if len(springSet) != broken[i] {
-			return true
+			return 0
 		}
 	}
-	return false
-}
-
-func countNonWorking(input string) int {
-	count := 0
-	for _, v := range input {
-		if v != '.' {
-			count++
-		}
-	}
-	return count
-}
-
-func sum(list []int) int {
-	sum := 0
-	for _, v := range list {
-		sum += v
-	}
-	return sum
+	return 1
 }
 
 func replaceAtIndex(in string, r rune, i int) string {
@@ -108,6 +80,10 @@ func getIntList(input []string) []int {
 	return nums
 }
 
-// this represents the un-evaluated
 type State struct {
+}
+
+// maybe it's by prefix? like "matchedSoFar"? does that make sense? no. because all prefixes are theoretically unique.
+func calculateState(input string, broken []int) State {
+	return State{}
 }
