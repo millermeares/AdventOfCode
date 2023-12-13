@@ -2,7 +2,6 @@ package twelve
 
 import (
 	"days"
-	"fmt"
 	"strings"
 )
 
@@ -22,8 +21,7 @@ func SumCountSpringArrangements(input []string) int {
 
 func SumCountFoldedSpringArrangements(input []string) int {
 	sum := 0
-	for i, line := range input {
-		fmt.Println("Starting line", i)
+	for _, line := range input {
 		sum += countExpandedSpringArrangement(line)
 	}
 	return sum
@@ -32,7 +30,6 @@ func SumCountFoldedSpringArrangements(input []string) int {
 func countExpandedSpringArrangement(line string) int {
 	expanded := expandSpringInput(line)
 	count := countSpringArrangements(expanded)
-	fmt.Println("Calculated", count, "for line", line, "that was expanded to", expanded)
 	return count
 }
 

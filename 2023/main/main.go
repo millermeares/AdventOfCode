@@ -5,6 +5,7 @@ import (
 	"days/twelve"
 	"fmt"
 	"os"
+	"time"
 )
 
 func main() {
@@ -16,10 +17,21 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	part1Answer := day.Part1(input)
-	fmt.Println("Part 1:", part1Answer)
-	part2Answer := day.Part2(input)
-	fmt.Println("Part 2:", part2Answer)
+	timeFunc("Part 1", input, day.Part1)
+	timeFunc("Part 2", input, day.Part2)
+}
+
+func timer(name string) func() {
+	start := time.Now()
+	return func() {
+		fmt.Printf("%s time: %v\n", name, time.Since(start))
+	}
+}
+
+func timeFunc(name string, input []string, f func([]string) int) {
+	defer timer(name)()
+	part1Answer := f(input)
+	fmt.Println(name, "answer:", part1Answer)
 }
 
 func readInputIntoList(day string) ([]string, error) {

@@ -77,7 +77,6 @@ func countValidSpringArrangements(input string, broken []int, memo map[string]in
 				// 4. if input[unknownIdx+1] is a ?, then unknownIdx+1 *cannot* be a #. Set it to a period and then call countValidSpringArrangements(replacedBrokenSpring, broken[1:])
 				brokenSpringCase = replaceAtIndex(brokenSpringCase, '.', unknownIdx+1)
 				springBrokenCount = countValidSpringArrangements(brokenSpringCase[unknownIdx+1:], broken[1:], memo)
-				// springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
 			}
 		}
 	} else {
