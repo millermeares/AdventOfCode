@@ -58,30 +58,7 @@ func countValidSpringArrangements(input string, broken []int, memo map[string]in
 
 	brokenSpringCase := replaceAtIndex(input, '#', unknownIdx)
 
-	springBrokenCount := 0
-	// we currently match the next set of broken things.
-	if len(broken) > 0 && broken[0] == unknownIdx+1 {
-		// now there are 4 cases.
-		if unknownIdx == len(input)-1 {
-			// 1. we are at the end of the string. springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
-			springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken, memo)
-		} else {
-			nextChar := input[unknownIdx+1]
-			if nextChar == '.' {
-				// 2. input[unknownIdx+1] is a period. springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken)
-				springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken, memo)
-			} else if nextChar == '#' {
-				// 3. if input[unknownIdx+1] is a #, not a valid match no further evaluation needed.
-				springBrokenCount = 0
-			} else if nextChar == '?' {
-				// 4. if input[unknownIdx+1] is a ?, then unknownIdx+1 *cannot* be a #. Set it to a period and then call countValidSpringArrangements(replacedBrokenSpring, broken[1:])
-				brokenSpringCase = replaceAtIndex(brokenSpringCase, '.', unknownIdx+1)
-				springBrokenCount = countValidSpringArrangements(brokenSpringCase[unknownIdx+1:], broken[1:], memo)
-			}
-		}
-	} else {
-		springBrokenCount = countValidSpringArrangements(brokenSpringCase, broken, memo)
-	}
+	springBrokenCount := countValidSpringArrangements(brokenSpringCase, broken, memo)
 
 	// move to first non-# and then try to match a "broken"? to reduce search space?
 	// careful of ##?? 2 1  because ###. is not valid. but if you greedily take ##, then ?? would match "11" twice, rather than once.
