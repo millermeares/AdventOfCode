@@ -130,9 +130,6 @@ func replaceAtIndex(in string, r rune, i int) string {
 }
 
 func replaceColumn(input []string, colIdx int, column string) []string {
-	if len(input[colIdx]) != len(column) {
-		panic("Unexpected column length")
-	}
 	for i := 0; i < len(column); i++ {
 		input[i] = replaceAtIndex(input[i], rune(column[i]), colIdx)
 	}

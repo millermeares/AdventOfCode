@@ -13,24 +13,18 @@ func countSpringArrangements(input string) int {
 	return countValidSpringArrangements(split[0], broken, memo)
 }
 
-type Args struct {
-	input  string
-	broken []int
-}
-
-func (a Args) mapKey() string {
+func mapKey(input string, broken []int) string {
 	var sList []string
-	for _, n := range a.broken {
+	for _, n := range broken {
 		sList = append(sList, fmt.Sprintf("%d", n))
 	}
-	return a.input + " " + strings.Join(sList, ",")
+	return input + " " + strings.Join(sList, ",")
 }
 
 func countValidSpringArrangements(input string, broken []int, memo map[string]int) int {
 	input = moveToFirstNonDot(input)
 
-	args := Args{input: input, broken: broken}
-	memoKey := args.mapKey()
+	memoKey := mapKey(input, broken)
 	ans, exists := memo[memoKey]
 	if exists {
 		return ans
