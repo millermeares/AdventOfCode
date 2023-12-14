@@ -2,7 +2,7 @@ package fourteen
 
 import (
 	"days"
-	"fmt"
+	"math"
 	"strings"
 )
 
@@ -16,26 +16,28 @@ func Part1(input []string) int {
 }
 
 func Part2(input []string) int {
-	memo := map[string][]string{}
-	for i := 0; i < 1000000000; i++ {
-		if i%1000000 == 0 {
-			fmt.Println("Doing cycle", i)
-		}
-		input = spinCycleMemo(input, memo)
-	}
-	printInput("after a billion spins", input)
-	return calculateLoad(input)
+	spun := doSpinCycles(input, 1000000000)
+	return calculateLoad(spun)
 }
 
-// if there are a lot of duplicates, this would help.
-func spinCycleMemo(input []string, memo map[string][]string) []string {
-	key := inputToString(input)
-	res, exists := memo[key]
-	if exists {
-		return res
+func doSpinCycles(input []string, times int) []string {
+	lastSeen := map[string]int{}
+
+	for i := 0; i < times; i++ {
+		key := inputToString(input)
+		iterLastSeen, seenBefore := lastSeen[key]
+		if !seenBefore {
+			lastSeen[key] = i
+			input = spinCycle(input)
+			continue
+		}
+		remaining := times - i
+		gap := i - iterLastSeen
+		jumps := int(math.Floor(float64(remaining) / float64(gap)))
+		i += (gap * jumps)
+		lastSeen[key] = i
+		input = spinCycle(input) // todo:possibly only run spin cycle if i != times. ok wtf it worked??
 	}
-	input = spinCycle(input)
-	memo[key] = input
 	return input
 }
 
@@ -45,22 +47,10 @@ func inputToString(input []string) string {
 
 func spinCycle(input []string) []string {
 	input = tiltNorth(input)
-	// printInput("after north tilt", input)
 	input = tiltWest(input)
-	// printInput("after west tilt", input)
 	input = tiltSouth(input)
-	// printInput("after south tilt", input)
 	input = tiltEast(input)
-	// printInput("after east tilt", input)
 	return input
-}
-
-func printInput(msg string, input []string) {
-	fmt.Println("Printing", msg)
-	for _, line := range input {
-		fmt.Println(line)
-	}
-	fmt.Println()
 }
 
 func tiltNorth(input []string) []string {

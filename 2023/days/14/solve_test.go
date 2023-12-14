@@ -35,6 +35,22 @@ func TestPart2_Example(t *testing.T) {
 		"#....###..",
 		"#OO..#....",
 	}
+	assert.Equal(t, 64, Part2(input))
+}
+
+func TestPart2_Spins(t *testing.T) {
+	input := []string{
+		"O....#....",
+		"O.OO#....#",
+		".....##...",
+		"OO.#O....O",
+		".O.....O#.",
+		"O.#..O.#.#",
+		"..O..#O..O",
+		".......O..",
+		"#....###..",
+		"#OO..#....",
+	}
 	oneSpin := spinCycle(input)
 	expected := []string{
 		".....#....",
@@ -79,5 +95,4 @@ func TestPart2_Example(t *testing.T) {
 		"#.OOO#...O",
 	}
 	assert.Equal(t, expected, threeSpins)
-	assert.False(t, true)
 }
