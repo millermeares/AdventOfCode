@@ -29,7 +29,7 @@ func countEnclosed(lines []Line) int {
 	count := 0
 	minX, maxX := xRange(lines)
 	minY, maxY := yRange(lines)
-	// vertical := sortedVertical(lines)
+	vertical := sortedVertical(lines)
 	for y := minY; y <= maxY; y++ {
 		oldCount := count
 		for x := minX; x <= maxX; x++ {
@@ -41,7 +41,10 @@ func countEnclosed(lines []Line) int {
 			}
 			enclosed := pointEnclosed(p, maxX, lines)
 			if enclosed {
-				count++
+				firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical) // we know that it crosses one.
+				amount := firstMatchedVerticalX - x
+				count += amount
+				x = firstMatchedVerticalX - 1
 			}
 			// firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical)
 
