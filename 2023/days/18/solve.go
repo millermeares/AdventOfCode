@@ -4,6 +4,7 @@ import (
 	"days"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -15,9 +16,6 @@ func GetDay() days.Day {
 func Part1(input []string) int {
 	digs := parseInput(input)
 	lines := toLines(digs)
-	for _, line := range lines {
-		fmt.Println(line)
-	}
 	return countEnclosed(lines)
 }
 
@@ -31,37 +29,36 @@ func countEnclosed(lines []Line) int {
 	count := 0
 	minX, maxX := xRange(lines)
 	minY, maxY := yRange(lines)
+	vertical := sortedVertical(lines)
 	for y := minY; y <= maxY; y++ {
+		oldCount := count
 		for x := minX; x <= maxX; x++ {
 			p := Point{x: x, y: y}
-			fmt.Println("Evaluating", p)
-			if pointEnclosed(p, maxX, lines) {
-				count++
-			}
+			// fmt.Println("Evaluating", p)
+			enclosed := pointEnclosed(p, maxX, lines)
+			firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical)
 		}
+		fmt.Println("Added", count-oldCount, "in row", y)
 	}
 	return count
 }
 
+// return (pointEnclosed, pointOnLine)
 func pointEnclosed(p Point, maxX int, lines []Line) bool {
 	linesCrossed := 0
 	endPoint := Point{y: p.y, x: maxX + 1}
 	lineToEdge := Line{start: p, end: endPoint}
 	for _, line := range lines {
 		if line.isOnLine(p) {
-			return true // if on line, functionally enclosed. horizontal should be handled?
+			return true
 		}
 		if !line.isVertical() {
 			continue // only count vertical lines that we crossed.
 		}
 		if line.crossesLine(lineToEdge) {
-			// fmt.Println(lineToEdge, "crosses line", line)
 			linesCrossed++
-		} else {
-			// fmt.Println(line, "does not cross", lineToEdge)
 		}
 	}
-	// fmt.Println("Crosses", linesCrossed, lineToEdge)
 	return linesCrossed%2 != 0
 }
 
@@ -80,13 +77,11 @@ func parseHexadecimalInput(input []string) []Dig {
 }
 
 func parseHexLength(hexLength string) int {
-	fmt.Println("parsing", hexLength)
 	hexLength = strings.Replace(hexLength, "#", "", -1)
 	parsed, e := strconv.ParseInt(hexLength, 16, 64)
 	if e != nil {
 		panic(e)
 	}
-	fmt.Println("Parsed length", parsed, "from", hexLength)
 	return int(parsed)
 }
 
@@ -262,6 +257,9 @@ func (l Line) right() Point {
 }
 
 func (vertical Line) crossesLine(horizontal Line) bool {
+	if horizontal.isVertical() {
+		return horizontal.crossesLine(vertical)
+	}
 	// horizontal Y should be between bottom Y(inclusive) and top Y (exclusive)
 	if !(horizontal.start.y <= vertical.bottom().y && horizontal.start.y > vertical.top().y) {
 		return false
@@ -287,4 +285,27 @@ func (l Line) isOnLine(p Point) bool {
 		}
 		return l.left().x <= p.x && l.right().x >= p.x
 	}
+}
+
+func sortedVertical(lines []Line) []Line {
+	var vertical []Line
+	for _, line := range lines {
+		if line.isVertical() {
+			vertical = append(vertical, line)
+		}
+	}
+	sort.SliceStable(vertical, func(i, j int) bool {
+		return vertical[i].start.x < vertical[j].end.x
+	})
+	return vertical
+}
+
+func firstCrossedVerticalX(p Point, maxX int, sortedVertical []Line) int {
+	lineToEdge := Line{start: p, end: Point{x: maxX + 1, y: p.y}}
+	for _, line := range sortedVertical {
+		if line.crossesLine(lineToEdge) {
+			return line.start.x
+		}
+	}
+	return maxX
 }
