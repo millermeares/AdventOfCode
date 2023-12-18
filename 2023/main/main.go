@@ -35,7 +35,7 @@ func timeFunc(name string, input []string, f func([]string) int) {
 }
 
 func readInputIntoList(day string) ([]string, error) {
-	file, err := os.Open("../days/" + day + "/sample2.txt")
+	file, err := os.Open("../days/" + day + "/input.txt")
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +47,5 @@ func readInputIntoList(day string) ([]string, error) {
 		line := scanner.Text()
 		lines = append(lines, line)
 	}
-
 	return lines, nil
 }
