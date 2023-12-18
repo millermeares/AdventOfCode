@@ -14,19 +14,55 @@ func GetDay() days.Day {
 
 func Part1(input []string) int {
 	digs := parseInput(input)
-	points := digsToPoints(digs)
-	grid := pointsToGrid(points)
-	fillInEnclosedPoints(grid)
-	return sum(grid)
+	lines := toLines(digs)
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+	return countEnclosed(lines)
 }
 
 func Part2(input []string) int {
 	digs := parseHexadecimalInput(input)
 	lines := toLines(digs)
+	return countEnclosed(lines)
 }
 
 func countEnclosed(lines []Line) int {
+	count := 0
+	minX, maxX := xRange(lines)
+	minY, maxY := yRange(lines)
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
+			p := Point{x: x, y: y}
+			fmt.Println("Evaluating", p)
+			if pointEnclosed(p, maxX, lines) {
+				count++
+			}
+		}
+	}
+	return count
+}
 
+func pointEnclosed(p Point, maxX int, lines []Line) bool {
+	linesCrossed := 0
+	endPoint := Point{y: p.y, x: maxX + 1}
+	lineToEdge := Line{start: p, end: endPoint}
+	for _, line := range lines {
+		if line.isOnLine(p) {
+			return true // if on line, functionally enclosed. horizontal should be handled?
+		}
+		if !line.isVertical() {
+			continue // only count vertical lines that we crossed.
+		}
+		if line.crossesLine(lineToEdge) {
+			// fmt.Println(lineToEdge, "crosses line", line)
+			linesCrossed++
+		} else {
+			// fmt.Println(line, "does not cross", lineToEdge)
+		}
+	}
+	// fmt.Println("Crosses", linesCrossed, lineToEdge)
+	return linesCrossed%2 != 0
 }
 
 func parseHexadecimalInput(input []string) []Dig {
@@ -70,129 +106,6 @@ func directionFromHexRune(r rune) string {
 	panic("Unexpected hex direction: " + string(r))
 }
 
-func sum(grid [][]int) int {
-	sum := 0
-	for y := 0; y < len(grid); y++ {
-		for x := 0; x < len(grid[y]); x++ {
-			sum += grid[y][x]
-		}
-	}
-	return sum
-}
-
-func fillInEnclosedPoints(grid [][]int) {
-	for y := len(grid) - 1; y >= 0; y-- {
-		for x := 0; x < len(grid[y]); x++ {
-			if grid[y][x] != 0 {
-				continue
-			}
-			if isEnclosed(y, x, grid) {
-				grid[y][x] = 1 // i bet part 2 will be manipulating this
-			}
-		}
-	}
-}
-
-func isEnclosed(y, x int, grid [][]int) bool {
-	if y == 0 || y == len(grid)-1 {
-		return false // top and bottom edge of grid cannot be enclosed.
-	}
-	// count amount of times that it crosses a line. if even, it is not enclosed.
-	// if odd, it is enclosed.
-	count := 0
-	for i := x; i < len(grid[y]); i++ {
-		// if this point is a "wall" going upwards at least 1 square, count it.
-		if grid[y-1][i] != 0 && grid[y][i] != 0 {
-			count++
-		}
-	}
-	return count%2 == 1
-}
-
-// points not on grid should have value 1. on grid should have value 0
-func pointsToGrid(points []Point) [][]int {
-	points = offsetPoints(minX(points), minY(points), points)
-	maxX := maxX(points)
-	maxY := maxY(points)
-	grid := make([][]int, maxY+1)
-	for i := 0; i < len(grid); i++ {
-		grid[i] = make([]int, maxX+1)
-	}
-
-	for _, p := range points {
-		grid[p.y][p.x] = 1
-	}
-	return grid
-}
-
-func offsetPoints(xOffset, yOffset int, points []Point) []Point {
-	var offsetPoints []Point
-	for _, p := range points {
-		offsetPoints = append(offsetPoints, Point{x: p.x - xOffset, y: p.y - yOffset})
-	}
-	return offsetPoints
-}
-
-func minX(points []Point) int {
-	min := math.MaxInt
-	for _, p := range points {
-		if min > p.x {
-			min = p.x
-		}
-	}
-	return min
-}
-
-func minY(points []Point) int {
-	min := math.MaxInt
-	for _, p := range points {
-		if min > p.y {
-			min = p.y
-		}
-	}
-	return min
-}
-
-func maxX(points []Point) int {
-	max := 0
-	for _, p := range points {
-		if p.x > max {
-			max = p.x
-		}
-	}
-	return max
-}
-
-func maxY(points []Point) int {
-	max := 0
-	for _, p := range points {
-		if p.y > max {
-			max = p.y
-		}
-	}
-	return max
-}
-
-func digsToPoints(digs []Dig) []Point {
-	start := Point{x: 0, y: 0}
-	perimeter := []Point{}
-	for _, dig := range digs {
-		perimeter = append(perimeter, dig.toPoints(start)...)
-		start = perimeter[len(perimeter)-1]
-	}
-	return perimeter
-}
-
-func (d Dig) toPoints(cur Point) []Point {
-	xChange, yChange := getXYChange(d.direction)
-	var points []Point
-	for i := 0; i < d.meters; i++ {
-		nextPoint := Point{x: cur.x + (xChange * (i + 1)), y: cur.y + (yChange * (i + 1))}
-		points = append(points, nextPoint)
-	}
-	return points
-}
-
 func toLines(digs []Dig) []Line {
 	var lines []Line
 	start := Point{x: 0, y: 0}
@@ -207,7 +120,7 @@ func (d Dig) toLine(cur Point) Line {
 	xChange, yChange := getXYChange(d.direction)
 	return Line{
 		start: cur,
-		end:   Point{x: cur.x + xChange, y: cur.y + yChange},
+		end:   Point{x: cur.x + (xChange * d.meters), y: cur.y + (yChange * d.meters)},
 	}
 }
 
@@ -242,8 +155,68 @@ type Line struct {
 	end   Point
 }
 
+func (l Line) minX() int {
+	if l.start.x > l.end.x {
+		return l.end.x
+	}
+	return l.start.x
+}
+
+func (l Line) maxX() int {
+	if l.start.x > l.end.x {
+		return l.start.x
+	}
+	return l.end.x
+}
+
+func (l Line) minY() int {
+	if l.start.y > l.end.y {
+		return l.end.y
+	}
+	return l.start.y
+}
+
+func (l Line) maxY() int {
+	if l.start.y < l.end.y {
+		return l.end.y
+	}
+	return l.start.y
+}
+
+func xRange(lines []Line) (int, int) {
+	minX := math.MaxInt
+	maxX := math.MinInt
+	for _, line := range lines {
+		lineMinX := line.minX()
+		lineMaxX := line.maxX()
+		if minX > lineMinX {
+			minX = lineMinX
+		}
+		if lineMaxX > maxX {
+			maxX = lineMaxX
+		}
+	}
+	return minX, maxX
+}
+
+func yRange(lines []Line) (int, int) {
+	minY := math.MaxInt
+	maxY := math.MinInt
+	for _, line := range lines {
+		lineMinY := line.minY()
+		lineMaxX := line.maxY()
+		if minY > lineMinY {
+			minY = lineMinY
+		}
+		if lineMaxX > maxY {
+			maxY = lineMaxX
+		}
+	}
+	return minY, maxY
+}
+
 func (l Line) isVertical() bool {
-	return l.start.x == l.end.y
+	return l.start.x == l.end.x
 }
 
 func parseInput(input []string) []Dig {
@@ -254,4 +227,64 @@ func parseInput(input []string) []Dig {
 		digs = append(digs, Dig{meters: meters, direction: split[0]})
 	}
 	return digs
+}
+
+// smaller y
+func (l Line) top() Point {
+	if l.start.y > l.end.y {
+		return l.end
+	}
+	return l.start
+}
+
+// bigger y
+func (l Line) bottom() Point {
+	if l.start.y > l.end.y {
+		return l.start
+	}
+	return l.end
+}
+
+// smaller x
+func (l Line) left() Point {
+	if l.start.x > l.end.x {
+		return l.end
+	}
+	return l.start
+}
+
+// bigger x
+func (l Line) right() Point {
+	if l.start.x > l.end.x {
+		return l.start
+	}
+	return l.end
+}
+
+func (vertical Line) crossesLine(horizontal Line) bool {
+	// horizontal Y should be between bottom Y(inclusive) and top Y (exclusive)
+	if !(horizontal.start.y <= vertical.bottom().y && horizontal.start.y > vertical.top().y) {
+		return false
+	}
+
+	// vertical X should be between horizontal left() and right()
+	if !(vertical.start.x >= horizontal.left().x && vertical.start.x < horizontal.right().x) {
+		return false
+	}
+	return true
+}
+
+func (l Line) isOnLine(p Point) bool {
+	if l.isVertical() {
+		if p.x != l.start.x {
+			return false
+		}
+		return l.bottom().y >= p.y && l.top().y <= p.y
+	} else {
+		// l is horizontal (y is same for each point)
+		if p.y != l.start.y {
+			return false
+		}
+		return l.left().x <= p.x && l.right().x >= p.x
+	}
 }

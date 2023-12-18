@@ -18,7 +18,7 @@ func main() {
 		return
 	}
 	timeFunc("Part 1", input, day.Part1)
-	timeFunc("Part 2", input, day.Part2)
+	// timeFunc("Part 2", input, day.Part2)
 }
 
 func timer(name string) func() {
