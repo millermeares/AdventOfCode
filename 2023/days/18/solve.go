@@ -29,29 +29,43 @@ func countEnclosed(lines []Line) int {
 	count := 0
 	minX, maxX := xRange(lines)
 	minY, maxY := yRange(lines)
-	vertical := sortedVertical(lines)
+	// vertical := sortedVertical(lines)
 	for y := minY; y <= maxY; y++ {
 		oldCount := count
 		for x := minX; x <= maxX; x++ {
 			p := Point{x: x, y: y}
 			// fmt.Println("Evaluating", p)
+			if isOnLine(p, lines) {
+				count++
+				continue
+			}
 			enclosed := pointEnclosed(p, maxX, lines)
-			firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical)
+			if enclosed {
+				count++
+			}
+			// firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical)
+
 		}
 		fmt.Println("Added", count-oldCount, "in row", y)
 	}
 	return count
 }
 
-// return (pointEnclosed, pointOnLine)
+func isOnLine(p Point, lines []Line) bool {
+	for _, l := range lines {
+		if l.isOnLine(p) {
+			return true
+		}
+	}
+	return false
+}
+
+// return (pointEnclosed)
 func pointEnclosed(p Point, maxX int, lines []Line) bool {
 	linesCrossed := 0
 	endPoint := Point{y: p.y, x: maxX + 1}
 	lineToEdge := Line{start: p, end: endPoint}
 	for _, line := range lines {
-		if line.isOnLine(p) {
-			return true
-		}
 		if !line.isVertical() {
 			continue // only count vertical lines that we crossed.
 		}
