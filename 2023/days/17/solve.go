@@ -3,6 +3,7 @@ package seventeen
 import (
 	"days"
 	"math"
+	"strings"
 )
 
 func GetDay() days.Day {
@@ -17,6 +18,7 @@ type Point struct {
 type PathToPoint struct {
 	straightLineLength int
 	previousPoint      Point
+	visited            string
 }
 
 func Part1(input []string) int {
@@ -34,7 +36,8 @@ func cheapestPathDFS(path []Point, maze [][]int, visited [][]bool, memo map[Poin
 	if last.isEnd(maze) {
 		return 0
 	}
-	pathToPoint := getPathToPoint(path)
+	// I think the problem is that the memo can't accurately account for "visited".
+	pathToPoint := getPathToPoint(path, visited)
 	lc, e := memo[last]
 	if e {
 		cost, lenExists := lc[pathToPoint]
@@ -147,7 +150,7 @@ func sameX(points []Point) bool {
 	return true
 }
 
-func getPathToPoint(points []Point) PathToPoint {
+func getPathToPoint(points []Point, visited [][]bool) PathToPoint {
 	straightLineLength := straightLineLength(points)
 	if len(points) <= 1 {
 		return PathToPoint{
@@ -157,6 +160,7 @@ func getPathToPoint(points []Point) PathToPoint {
 	return PathToPoint{
 		straightLineLength: straightLineLength,
 		previousPoint:      points[len(points)-2],
+		// visited:            boolArrayToString(visited),
 	}
 }
 
@@ -183,17 +187,17 @@ func straightLineLength(points []Point) int {
 
 func (p Point) adjacentPoints(maze [][]int) []Point {
 	var points []Point
-	if p.x != 0 {
-		points = append(points, Point{x: p.x - 1, y: p.y})
-	}
-	if p.x != len(maze[p.y])-1 {
-		points = append(points, Point{x: p.x + 1, y: p.y})
-	}
 	if p.y != 0 {
 		points = append(points, Point{x: p.x, y: p.y - 1})
 	}
 	if p.y != len(maze)-1 {
 		points = append(points, Point{x: p.x, y: p.y + 1})
+	}
+	if p.x != 0 {
+		points = append(points, Point{x: p.x - 1, y: p.y})
+	}
+	if p.x != len(maze[p.y])-1 {
+		points = append(points, Point{x: p.x + 1, y: p.y})
 	}
 	return points
 }
@@ -220,4 +224,20 @@ func toIntArray(input []string) [][]int {
 		rows[i] = nums
 	}
 	return rows
+}
+
+func boolArrayToString(visited [][]bool) string {
+	list := []string{}
+	for _, line := range visited {
+		str := ""
+		for _, v := range line {
+			if v {
+				str = str + "T"
+			} else {
+				str = str + "F"
+			}
+		}
+		list = append(list, str)
+	}
+	return strings.Join(list, "-")
 }
