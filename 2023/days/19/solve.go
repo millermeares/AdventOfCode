@@ -23,7 +23,23 @@ func Part1(input []string) int {
 }
 
 func Part2(input []string) int {
-	return -1
+	workflows, _ := parseInput(input)
+	count := 0
+	for x := 0; x < 4000; x++ {
+		fmt.Println("Evaluating x", x)
+		for m := 0; m < 4000; m++ {
+			fmt.Println("Evaluating m", m)
+			for a := 0; a < 4000; a++ {
+				for s := 0; s < 4000; s++ {
+					pr := PartRating{a: a, s: s, x: x, m: m}
+					if evaluatePartRating(workflows, pr) {
+						count++
+					}
+				}
+			}
+		}
+	}
+	return count
 }
 
 func parseInput(input []string) (map[string]Workflow, []PartRating) {
@@ -52,7 +68,6 @@ func evaluatePartRating(workflows map[string]Workflow, pr PartRating) bool {
 	for currentState != "A" && currentState != "R" {
 		currentWorkflow := workflows[currentState]
 		currentState = currentWorkflow.getResultingState(pr)
-		fmt.Println("At state", currentState, "after evaluating workflow", currentWorkflow.name)
 	}
 	return currentState == "A"
 }
