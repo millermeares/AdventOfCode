@@ -2,7 +2,6 @@ package nineteen
 
 import (
 	"days"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -11,79 +10,58 @@ func GetDay() days.Day {
 	return days.MakeDay(Part1, Part2, "19")
 }
 
-func Part1(input []string) int {
-	workflows, partRatings := parseInput(input)
-	sum := 0
-	for _, pr := range partRatings {
-		if evaluatePartRating(workflows, pr) {
-			sum += pr.total()
-		}
-	}
-	return sum
-}
-
-func Part2(input []string) int {
+func parameterizedPart2(input []string, beginRange Ranges) int {
 	workflows, _ := parseInput(input)
 	count := 0
-	for x := 0; x < 4000; x++ {
-		fmt.Println("Evaluating x", x)
-		for m := 0; m < 4000; m++ {
-			fmt.Println("Evaluating m", m)
-			for a := 0; a < 4000; a++ {
-				for s := 0; s < 4000; s++ {
-					pr := PartRating{a: a, s: s, x: x, m: m}
-					if evaluatePartRating(workflows, pr) {
-						count++
-					}
-				}
+	queue := []RangeDestination{
+		{destination: "in", ranges: beginRange},
+	}
+	for len(queue) > 0 {
+		pq, popped := dequeue(queue)
+		queue = pq
+		if popped.destination == "R" {
+			continue // doesn't match any.
+		}
+		if popped.destination == "A" {
+			count += popped.ranges.getCount()
+			continue
+		}
+
+		workflow := workflows[popped.destination]
+		ranges := popped.ranges
+		for _, rule := range workflow.rules {
+			matchedRange, unmatchedRange := rule.splitRanges(ranges)
+			if matchedRange.getCount() > 0 {
+				queue = append(queue, RangeDestination{
+					destination: rule.matchedState(), ranges: matchedRange,
+				})
 			}
+			if unmatchedRange.getCount() == 0 {
+				break // no unmatched, so no need to continue rule evaluation
+			}
+			ranges = unmatchedRange // set to new value to let next rule be evaluated.
 		}
 	}
 	return count
 }
 
-func parseInput(input []string) (map[string]Workflow, []PartRating) {
-	workflows := map[string]Workflow{}
-	var partRatings []PartRating
-	parsingWorkflow := true
-
-	for _, line := range input {
-		if line == "" {
-			parsingWorkflow = false
-			continue
-		}
-		if parsingWorkflow {
-			workflow := parseWorkflow(line)
-			workflows[workflow.name] = workflow
-		} else {
-			partRatings = append(partRatings, parsePartRating(line))
-		}
-	}
-	return workflows, partRatings
+func Part2(input []string) int {
+	return parameterizedPart2(input, starterRanges(4000))
 }
 
-// returns true if reached "R" and false if reaches "A"
-func evaluatePartRating(workflows map[string]Workflow, pr PartRating) bool {
-	currentState := "in"
-	for currentState != "A" && currentState != "R" {
-		currentWorkflow := workflows[currentState]
-		currentState = currentWorkflow.getResultingState(pr)
-	}
-	return currentState == "A"
+func dequeue(rds []RangeDestination) ([]RangeDestination, RangeDestination) {
+	popped := rds[len(rds)-1]
+	return rds[:len(rds)-1], popped
+}
+
+type RangeDestination struct {
+	ranges      Ranges
+	destination string
 }
 
 type Workflow struct {
 	name  string
 	rules []Rule
-}
-
-func (w Workflow) getResultingState(pr PartRating) string {
-	for i := 0; i < len(w.rules); i++ {
-		if w.rules[i].matches(pr) {
-			return w.rules[i].matchedState()
-		}
-	}
-	panic("no rules matched")
 }
 
 func parseWorkflow(input string) Workflow {
@@ -96,12 +74,10 @@ func parseWorkflow(input string) Workflow {
 
 func parseRules(input string) []Rule {
 	var rules []Rule
-
 	rawRules := jsSplit(input, ",")
 	for _, rule := range rawRules {
 		rules = append(rules, parseRule(rule))
 	}
-
 	return rules
 }
 
@@ -128,47 +104,21 @@ func parseConditionalRule(input string) ConditionalRule {
 	}
 }
 
-type PartRating struct {
-	x int
-	m int
-	a int
-	s int
-}
-
-func (pr PartRating) getMatching(r rune) int {
-	if r == 'x' {
-		return pr.x
-	}
-	if r == 'm' {
-		return pr.m
-	}
-	if r == 'a' {
-		return pr.a
-	}
-	if r == 's' {
-		return pr.s
-	}
-	panic("Unexpected input " + string(r))
-}
-
-func (pr PartRating) total() int {
-	return pr.x + pr.a + pr.m + pr.s
-}
-
 type Rule interface {
 	matches(pr PartRating) bool
+	matchesProp(propToCompare int) bool
 	matchedState() string
+	splitRanges(r Ranges) (Ranges, Ranges)
 }
 
 type ConditionalRule struct {
+	toEvaluate  rune
 	operator    rune
 	compareTo   int
 	stateIfTrue string
-	toEvaluate  rune
 }
 
-func (c ConditionalRule) matches(pr PartRating) bool {
-	propToCompare := pr.getMatching(c.toEvaluate)
+func (c ConditionalRule) matchesProp(propToCompare int) bool {
 	if c.operator == '>' {
 		return propToCompare > c.compareTo
 	}
@@ -186,33 +136,97 @@ type FallbackRule struct {
 	state string
 }
 
-func (fr FallbackRule) matches(pr PartRating) bool {
-	return true
-}
-
 func (fr FallbackRule) matchedState() string {
 	return fr.state
 }
 
-func parsePartRating(input string) PartRating {
-	input = strings.Replace(input, "{", "", -1)
-	input = strings.Replace(input, "}", "", -1)
-	input = strings.Replace(input, "=", "", -1)
-	input = strings.Replace(input, "x", "", -1)
-	input = strings.Replace(input, "m", "", -1)
-	input = strings.Replace(input, "a", "", -1)
-	input = strings.Replace(input, "s", "", -1)
+func (fr FallbackRule) matchesProp(propToCompare int) bool {
+	return true
+}
 
-	// assuming that all parts are present and come in the same order every time.
-	list := jsSplit(input, ",")
-	x, _ := strconv.Atoi(list[0])
-	m, _ := strconv.Atoi(list[1])
-	a, _ := strconv.Atoi(list[2])
-	s, _ := strconv.Atoi(list[3])
-	return PartRating{x: x, m: m, a: a, s: s}
+func (fr FallbackRule) splitRanges(rs Ranges) (Ranges, Ranges) {
+	return rs, emptyRanges()
 }
 
 func jsSplit(input string, substring string) []string {
 	input = strings.Replace(input, substring, " ", -1)
 	return strings.Fields(input)
+}
+
+type Ranges struct {
+	rs map[rune]Range
+}
+
+type Range struct {
+	min int
+	max int
+}
+
+func (r Range) length() int {
+	return r.max - r.min
+}
+
+// returns matchingRange, nonMatchingRange
+func (cr ConditionalRule) splitRanges(ranges Ranges) (Ranges, Ranges) {
+	propRange := ranges.rs[cr.toEvaluate]
+	matchesMin := cr.matchesProp(propRange.min)
+	matchesMax := cr.matchesProp(propRange.max - 1) // subtract because actual max is excluded.
+	// if matches both, the entire range is matched.
+	if matchesMax && matchesMin {
+		return ranges, emptyRanges() // rule includes this range
+	}
+	if !matchesMax && !matchesMin {
+		return emptyRanges(), ranges // rule does not include this range.
+	}
+
+	if matchesMin {
+		matchedRange := Range{min: propRange.min, max: cr.compareTo}
+		notMatchedRange := Range{min: cr.compareTo, max: propRange.max}
+		return Ranges{rs: copyWithValue(ranges.rs, cr.toEvaluate, matchedRange)},
+			Ranges{rs: copyWithValue(ranges.rs, cr.toEvaluate, notMatchedRange)}
+	}
+	matchedRange := Range{min: cr.compareTo + 1, max: propRange.max}
+	notMatchedRange := Range{min: propRange.min, max: cr.compareTo + 1}
+	return Ranges{rs: copyWithValue(ranges.rs, cr.toEvaluate, matchedRange)},
+		Ranges{rs: copyWithValue(ranges.rs, cr.toEvaluate, notMatchedRange)}
+}
+
+func (r Ranges) getCount() int {
+	product := 1
+	for _, r := range r.rs {
+		product *= r.length()
+	}
+	return product
+}
+
+func starterRanges(maximum int) Ranges {
+	ranges := map[rune]Range{}
+	ranges['m'] = Range{min: 1, max: maximum + 1}
+	ranges['s'] = Range{min: 1, max: maximum + 1}
+	ranges['a'] = Range{min: 1, max: maximum + 1}
+	ranges['x'] = Range{min: 1, max: maximum + 1}
+	return Ranges{rs: ranges}
+}
+
+func emptyRanges() Ranges {
+	ranges := map[rune]Range{}
+	ranges['m'] = Range{min: 0, max: 0}
+	ranges['s'] = Range{min: 0, max: 0}
+	ranges['a'] = Range{min: 0, max: 0}
+	ranges['x'] = Range{min: 0, max: 0}
+	return Ranges{rs: ranges}
+}
+
+func copy(ranges map[rune]Range) map[rune]Range {
+	copy := map[rune]Range{}
+	for k, v := range ranges {
+		copy[k] = v
+	}
+	return copy
+}
+
+func copyWithValue(ranges map[rune]Range, k rune, v Range) map[rune]Range {
+	copy := copy(ranges)
+	copy[k] = v
+	return copy
 }
