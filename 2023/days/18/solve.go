@@ -40,6 +40,7 @@ func countEnclosed(lines []Line) int {
 			bottomLine := horizontalLines[i]
 			horizontalLines = append(horizontalLines[:i], horizontalLines[i+1:]...) // remove bottom line.
 
+			// the problem with this approach is that there can sometimes be parts of vertical lines that are missed if below a "bottomLine" on the right side. (i think)
 			yDiff := bottomLine.start.y - topLine.start.y + 1
 			overlappingX := overlappingX(topLine, bottomLine) + 1
 			areaToAdd := overlappingX * yDiff
