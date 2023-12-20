@@ -4,6 +4,7 @@ import (
 	"math"
 )
 
+// technically this is SPFA, but same idea as dijkstra's - just less complicated.
 func dijkstra(input []string, minStraight int, maxStraight int) int {
 	maze := initializeMaze(input, maxStraight)
 	mazeWeights := toIntArray(input)

@@ -12,6 +12,10 @@ func Part1(input []string) int {
 	return dijkstra(input, 1, 3)
 }
 
+func Part2(input []string) int {
+	return dijkstra(input, 4, 10)
+}
+
 type Point struct {
 	x int
 	y int
@@ -75,10 +79,6 @@ func (p Point) adjacentPoints(maze [][]int) []Point {
 		points = append(points, Point{x: p.x + 1, y: p.y})
 	}
 	return points
-}
-
-func Part2(input []string) int {
-	return dijkstra(input, 4, 10)
 }
 
 func toIntArray(input []string) [][]int {
