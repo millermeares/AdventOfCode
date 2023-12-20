@@ -27,56 +27,79 @@ func Part2(input []string) int {
 
 func countEnclosed(lines []Line) int {
 	count := 0
-	minX, maxX := xRange(lines)
-	minY, maxY := yRange(lines)
-	vertical := sortedVertical(lines)
-	for y := minY; y <= maxY; y++ {
-		oldCount := count
-		for x := minX; x <= maxX; x++ {
-			p := Point{x: x, y: y}
-			// fmt.Println("Evaluating", p)
-			if isOnLine(p, lines) {
-				count++
+	horizontalLines := sortedHorizontal(lines)
+
+	for len(horizontalLines) > 0 {
+		topLine := horizontalLines[0]
+		horizontalLines = horizontalLines[1:] // pop. add unmatched part at end.
+
+		for i := 0; i < len(horizontalLines); i++ {
+			if !linesOverlap(topLine, horizontalLines[i]) {
 				continue
 			}
-			enclosed := pointEnclosed(p, maxX, lines)
-			if enclosed {
-				firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical) // we know that it crosses one.
-				amount := firstMatchedVerticalX - x
-				count += amount
-				x = firstMatchedVerticalX - 1
-			}
-			// firstMatchedVerticalX := firstCrossedVerticalX(p, maxX, vertical)
+			bottomLine := horizontalLines[i]
+			horizontalLines = append(horizontalLines[:i], horizontalLines[i+1:]...) // remove bottom line.
 
+			yDiff := bottomLine.start.y - topLine.start.y + 1
+			overlappingX := overlappingX(topLine, bottomLine) + 1
+			areaToAdd := overlappingX * yDiff
+			fmt.Println("Adding", areaToAdd, "as a result of overlap between", topLine, "and", bottomLine)
+			count += areaToAdd
+			leftoverLines := subtractOverlappingX(topLine, bottomLine)
+			fmt.Println("Left with", leftoverLines, "when subtracting overlap from", topLine, bottomLine)
+			horizontalLines = append(horizontalLines, leftoverLines...)
+			break
 		}
-		fmt.Println("Added", count-oldCount, "in row", y)
+		horizontalLines = sortedHorizontal(horizontalLines)
 	}
 	return count
 }
 
-func isOnLine(p Point, lines []Line) bool {
-	for _, l := range lines {
-		if l.isOnLine(p) {
-			return true
-		}
-	}
-	return false
+func subtractOverlappingX(l1 Line, l2 Line) []Line {
+	start, end := getOverlappingStartEndX(l1, l2)
+	remaining := removeSnippet(l1, start, end)
+	remaining = append(remaining, removeSnippet(l2, start, end)...)
+	return remaining
 }
 
-// return (pointEnclosed)
-func pointEnclosed(p Point, maxX int, lines []Line) bool {
-	linesCrossed := 0
-	endPoint := Point{y: p.y, x: maxX + 1}
-	lineToEdge := Line{start: p, end: endPoint}
-	for _, line := range lines {
-		if !line.isVertical() {
-			continue // only count vertical lines that we crossed.
-		}
-		if line.crossesLine(lineToEdge) {
-			linesCrossed++
-		}
+func removeSnippet(l Line, xStart, xEnd int) []Line {
+	var remaining []Line
+	if xStart != l.minX() {
+		remaining = append(remaining, Line{
+			start: l.start,
+			end:   Point{y: l.end.y, x: xStart - 1},
+		})
 	}
-	return linesCrossed%2 != 0
+
+	if xEnd != l.maxX() {
+		remaining = append(remaining, Line{
+			start: Point{y: l.start.y, x: xEnd + 1},
+			end:   l.end,
+		})
+	}
+
+	return remaining
+}
+
+func getOverlappingStartEndX(l1 Line, l2 Line) (int, int) {
+	left := l1
+	right := l2
+	if l2.minX() < l1.minX() {
+		left = l2
+		right = l1
+	}
+	start := right.minX()
+	end := int(math.Min(float64(right.maxX()), float64(left.maxX())))
+	return start, end
+}
+
+func linesOverlap(l1 Line, l2 Line) bool {
+	return overlappingX(l1, l2) > 0
+}
+
+func overlappingX(l1 Line, l2 Line) int {
+	start, end := getOverlappingStartEndX(l1, l2)
+	return end - start
 }
 
 func parseHexadecimalInput(input []string) []Dig {
@@ -181,52 +204,6 @@ func (l Line) maxX() int {
 	return l.end.x
 }
 
-func (l Line) minY() int {
-	if l.start.y > l.end.y {
-		return l.end.y
-	}
-	return l.start.y
-}
-
-func (l Line) maxY() int {
-	if l.start.y < l.end.y {
-		return l.end.y
-	}
-	return l.start.y
-}
-
-func xRange(lines []Line) (int, int) {
-	minX := math.MaxInt
-	maxX := math.MinInt
-	for _, line := range lines {
-		lineMinX := line.minX()
-		lineMaxX := line.maxX()
-		if minX > lineMinX {
-			minX = lineMinX
-		}
-		if lineMaxX > maxX {
-			maxX = lineMaxX
-		}
-	}
-	return minX, maxX
-}
-
-func yRange(lines []Line) (int, int) {
-	minY := math.MaxInt
-	maxY := math.MinInt
-	for _, line := range lines {
-		lineMinY := line.minY()
-		lineMaxX := line.maxY()
-		if minY > lineMinY {
-			minY = lineMinY
-		}
-		if lineMaxX > maxY {
-			maxY = lineMaxX
-		}
-	}
-	return minY, maxY
-}
-
 func (l Line) isVertical() bool {
 	return l.start.x == l.end.x
 }
@@ -241,88 +218,15 @@ func parseInput(input []string) []Dig {
 	return digs
 }
 
-// smaller y
-func (l Line) top() Point {
-	if l.start.y > l.end.y {
-		return l.end
-	}
-	return l.start
-}
-
-// bigger y
-func (l Line) bottom() Point {
-	if l.start.y > l.end.y {
-		return l.start
-	}
-	return l.end
-}
-
-// smaller x
-func (l Line) left() Point {
-	if l.start.x > l.end.x {
-		return l.end
-	}
-	return l.start
-}
-
-// bigger x
-func (l Line) right() Point {
-	if l.start.x > l.end.x {
-		return l.start
-	}
-	return l.end
-}
-
-func (vertical Line) crossesLine(horizontal Line) bool {
-	if horizontal.isVertical() {
-		return horizontal.crossesLine(vertical)
-	}
-	// horizontal Y should be between bottom Y(inclusive) and top Y (exclusive)
-	if !(horizontal.start.y <= vertical.bottom().y && horizontal.start.y > vertical.top().y) {
-		return false
-	}
-
-	// vertical X should be between horizontal left() and right()
-	if !(vertical.start.x >= horizontal.left().x && vertical.start.x < horizontal.right().x) {
-		return false
-	}
-	return true
-}
-
-func (l Line) isOnLine(p Point) bool {
-	if l.isVertical() {
-		if p.x != l.start.x {
-			return false
-		}
-		return l.bottom().y >= p.y && l.top().y <= p.y
-	} else {
-		// l is horizontal (y is same for each point)
-		if p.y != l.start.y {
-			return false
-		}
-		return l.left().x <= p.x && l.right().x >= p.x
-	}
-}
-
-func sortedVertical(lines []Line) []Line {
-	var vertical []Line
+func sortedHorizontal(lines []Line) []Line {
+	var horizontal []Line
 	for _, line := range lines {
-		if line.isVertical() {
-			vertical = append(vertical, line)
+		if !line.isVertical() {
+			horizontal = append(horizontal, line)
 		}
 	}
-	sort.SliceStable(vertical, func(i, j int) bool {
-		return vertical[i].start.x < vertical[j].end.x
+	sort.SliceStable(horizontal, func(i, j int) bool {
+		return horizontal[i].start.y < horizontal[j].end.y
 	})
-	return vertical
-}
-
-func firstCrossedVerticalX(p Point, maxX int, sortedVertical []Line) int {
-	lineToEdge := Line{start: p, end: Point{x: maxX + 1, y: p.y}}
-	for _, line := range sortedVertical {
-		if line.crossesLine(lineToEdge) {
-			return line.start.x
-		}
-	}
-	return maxX
+	return horizontal
 }
