@@ -36,6 +36,55 @@ func TestPart1_Playground(t *testing.T) {
 	assert.Equal(t, true, linesOverlap(l1, l2))
 }
 
+func TestCountEnclosed_Rectangle(t *testing.T) {
+	l1 := Line{
+		start: Point{x: 0, y: 0}, end: Point{x: 6, y: 0},
+	}
+	l2 := Line{
+		start: Point{x: 0, y: 2}, end: Point{x: 6, y: 2},
+	}
+	assert.Equal(t, 21, countEnclosed([]Line{l1, l2}))
+}
+
+func TestCountEnclosed_2(t *testing.T) {
+	assert.Equal(t, 36, countEnclosed([]Line{
+		{
+			start: Point{x: 6, y: 0}, end: Point{x: 0, y: 0},
+		},
+		{
+			start: Point{x: 0, y: 0}, end: Point{x: 0, y: 2},
+		},
+		{
+			start: Point{x: 0, y: 2}, end: Point{x: 2, y: 2},
+		},
+		{
+			start: Point{x: 2, y: 2}, end: Point{x: 2, y: 5},
+		},
+		{
+			start: Point{x: 2, y: 5}, end: Point{x: 6, y: 5},
+		},
+		{
+			start: Point{x: 6, y: 5}, end: Point{x: 6, y: 0},
+		},
+	}))
+}
+
+func TestPart1_Playground2(t *testing.T) {
+	// line of length 1, just y 3.
+	l1 := Line{
+		start: Point{x: 3, y: 0}, end: Point{x: 3, y: 0},
+	}
+	// line of length 2, from 3 to 4.
+	l2 := Line{
+		start: Point{x: 3, y: 2}, end: Point{x: 4, y: 2},
+	}
+
+	xOverStart, xOverEnd := getOverlappingStartEndX(l1, l2)
+	assert.Equal(t, 3, xOverStart)
+	assert.Equal(t, 3, xOverEnd)
+	assert.Equal(t, true, linesOverlap(l1, l2))
+}
+
 func TestPart2_Example(t *testing.T) {
 	input := []string{
 		"R 6 (#70c710)",

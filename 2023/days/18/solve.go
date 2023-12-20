@@ -28,13 +28,15 @@ func Part2(input []string) int {
 func countEnclosed(lines []Line) int {
 	count := 0
 	horizontalLines := sortedHorizontal(lines)
-
+	verticalLines := sortedVertical(lines)
 	for len(horizontalLines) > 0 {
 		topLine := horizontalLines[0]
 		horizontalLines = horizontalLines[1:] // pop. add unmatched part at end.
 
 		for i := 0; i < len(horizontalLines); i++ {
+			fmt.Println(horizontalLines)
 			if !linesOverlap(topLine, horizontalLines[i]) {
+				fmt.Println(topLine, "does not overlap with", horizontalLines[i])
 				continue
 			}
 			bottomLine := horizontalLines[i]
@@ -44,8 +46,11 @@ func countEnclosed(lines []Line) int {
 			yDiff := bottomLine.start.y - topLine.start.y + 1
 			overlappingX := overlappingX(topLine, bottomLine) + 1
 			areaToAdd := overlappingX * yDiff
+
 			fmt.Println("Adding", areaToAdd, "as a result of overlap between", topLine, "and", bottomLine)
 			count += areaToAdd
+			descendingVerticalLineLength := descendingVerticalLineAtCornerLength(bottomLine, verticalLines) // this is not a valid technique.
+			count += descendingVerticalLineLength
 			leftoverLines := subtractOverlappingX(topLine, bottomLine)
 			fmt.Println("Left with", leftoverLines, "when subtracting overlap from", topLine, bottomLine)
 			horizontalLines = append(horizontalLines, leftoverLines...)
@@ -56,6 +61,15 @@ func countEnclosed(lines []Line) int {
 	return count
 }
 
+func descendingVerticalLineAtCornerLength(bottomLine Line, verticalLines []Line) int {
+	for _, vertical := range verticalLines {
+		if vertical.top() == bottomLine.start || vertical.top() == bottomLine.end {
+			return vertical.verticalLength() - 2 // inclusive length, don't count corners
+		}
+	}
+	return 0
+}
+
 func subtractOverlappingX(l1 Line, l2 Line) []Line {
 	start, end := getOverlappingStartEndX(l1, l2)
 	remaining := removeSnippet(l1, start, end)
@@ -63,6 +77,8 @@ func subtractOverlappingX(l1 Line, l2 Line) []Line {
 	return remaining
 }
 
+// assume that both start and end of line are inclusive.
+// what are limitations of this strategy?
 func removeSnippet(l Line, xStart, xEnd int) []Line {
 	var remaining []Line
 	if xStart != l.minX() {
@@ -95,7 +111,7 @@ func getOverlappingStartEndX(l1 Line, l2 Line) (int, int) {
 }
 
 func linesOverlap(l1 Line, l2 Line) bool {
-	return overlappingX(l1, l2) > 0
+	return overlappingX(l1, l2) >= 0
 }
 
 func overlappingX(l1 Line, l2 Line) int {
@@ -205,6 +221,26 @@ func (l Line) maxX() int {
 	return l.end.x
 }
 
+func (l Line) top() Point {
+	above := l.start
+	if l.start.y > l.end.y { // smaller is higher.
+		above = l.end
+	}
+	return above
+}
+
+func (l Line) bottom() Point {
+	above := l.start
+	if l.start.y < l.end.y { // bigger is lower.
+		above = l.end
+	}
+	return above
+}
+
+func (l Line) verticalLength() int {
+	return l.bottom().y - l.top().y + 1
+}
+
 func (l Line) isVertical() bool {
 	return l.start.x == l.end.x
 }
@@ -230,4 +266,17 @@ func sortedHorizontal(lines []Line) []Line {
 		return horizontal[i].start.y < horizontal[j].end.y
 	})
 	return horizontal
+}
+
+func sortedVertical(lines []Line) []Line {
+	var vertical []Line
+	for _, line := range lines {
+		if line.isVertical() {
+			vertical = append(vertical, line)
+		}
+	}
+	sort.SliceStable(vertical, func(i, j int) bool {
+		return vertical[i].start.x < vertical[j].end.x
+	})
+	return vertical
 }

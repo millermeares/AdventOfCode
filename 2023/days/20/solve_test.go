@@ -30,3 +30,7 @@ func TestExample1_2(t *testing.T) {
 	fmt.Println(input)
 	assert.Equal(t, 11687500, Part1(input))
 }
+
+func TestPart2(t *testing.T) {
+
+}
