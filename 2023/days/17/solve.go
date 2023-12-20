@@ -2,12 +2,14 @@ package seventeen
 
 import (
 	"days"
-	"math"
-	"strings"
 )
 
 func GetDay() days.Day {
 	return days.MakeDay(Part1, Part2, "17")
+}
+
+func Part1(input []string) int {
+	return dijkstra(input)
 }
 
 type Point struct {
@@ -17,104 +19,9 @@ type Point struct {
 
 type PathToPoint struct {
 	straightLineLength int
+	curPoint           Point
 	previousPoint      Point
-	visited            string
-}
-
-func Part1(input []string) int {
-	visited := boolArrayOfSize(input)
-	maze := toIntArray(input)
-	start := Point{x: 0, y: 0}
-	path := []Point{start}
-	visited[0][0] = true
-	return cheapestPathDFS(path, maze, visited, map[Point]map[PathToPoint]int{})
-}
-
-// answer 882 and 800 are too high.
-func cheapestPathDFS(path []Point, maze [][]int, visited [][]bool, memo map[Point]map[PathToPoint]int) int {
-	last := path[len(path)-1]
-	if last.isEnd(maze) {
-		return 0
-	}
-	// I think the problem is that the memo can't accurately account for "visited".
-	pathToPoint := getPathToPoint(path, visited)
-	lc, e := memo[last]
-	if e {
-		cost, lenExists := lc[pathToPoint]
-		if lenExists {
-			return cost
-		}
-	}
-
-	children := possibleNextSteps(path, maze)
-	min := math.MaxInt
-	for _, child := range children {
-		if visited[child.y][child.x] {
-			continue
-		}
-		path = append(path, child)
-		visited[child.y][child.x] = true
-		amount := cheapestPathDFS(path, maze, visited, memo)
-		visited[child.y][child.x] = false
-		path = path[:len(path)-1]
-		if amount == math.MaxInt {
-			continue
-		}
-		amount += maze[child.y][child.x]
-		if min > amount {
-			min = amount
-		}
-	}
-	lenCost, e := memo[last]
-	if !e {
-		lenCost = map[PathToPoint]int{}
-	}
-	lenCost[pathToPoint] = min
-	memo[last] = lenCost
-	return min
-}
-
-func (p Point) isEnd(maze [][]int) bool {
-	return p.y == len(maze)-1 && p.x == len(maze[p.y])-1
-}
-
-func possibleNextSteps(path []Point, maze [][]int) []Point {
-	currentPoint := path[len(path)-1]
-	if len(path) == 1 {
-		// we are at the beginning. the two legal options are down and right.
-		return []Point{
-			{x: currentPoint.x + 1, y: currentPoint.y},
-			{x: currentPoint.x, y: currentPoint.y + 1},
-		}
-	}
-
-	adjacentPoints := currentPoint.adjacentPoints(maze)
-	// remove previous point as an option because we can't reverse.
-	adjacentPoints = removeEquivalentPoint(adjacentPoints, path[len(path)-2])
-	if len(path) >= 4 {
-		if pointsAreInStraightLine(path[len(path)-4:]) {
-			// if last 3 are straight line, don't allow "straight".
-			adjacentPoints = removeStraightOption(path, adjacentPoints)
-		}
-	}
-
-	return adjacentPoints
-}
-
-func removeStraightOption(path []Point, options []Point) []Point {
-	last := path[len(path)-1]
-	shortestPath := path[len(path)-2:]
-	sX := sameX(shortestPath)
-	sY := sameY(shortestPath)
-	for _, option := range options {
-		if sX && last.x == option.x {
-			return removeEquivalentPoint(options, option)
-		}
-		if sY && last.y == option.y {
-			return removeEquivalentPoint(options, option)
-		}
-	}
-	return options
+	costFromStart      int
 }
 
 func removeEquivalentPoint(points []Point, toRemove Point) []Point {
@@ -123,6 +30,9 @@ func removeEquivalentPoint(points []Point, toRemove Point) []Point {
 		if p == toRemove {
 			idx = i
 		}
+	}
+	if idx == -1 {
+		return points
 	}
 	return append(points[:idx], points[idx+1:]...)
 }
@@ -150,41 +60,6 @@ func sameX(points []Point) bool {
 	return true
 }
 
-func getPathToPoint(points []Point, visited [][]bool) PathToPoint {
-	straightLineLength := straightLineLength(points)
-	if len(points) <= 1 {
-		return PathToPoint{
-			straightLineLength: straightLineLength,
-		}
-	}
-	return PathToPoint{
-		straightLineLength: straightLineLength,
-		previousPoint:      points[len(points)-2],
-		// visited:            boolArrayToString(visited),
-	}
-}
-
-func straightLineLength(points []Point) int {
-	if len(points) == 1 {
-		return 1
-	}
-	lastTwo := points[len(points)-2:]
-	sX := sameX(lastTwo)
-	sY := sameY(lastTwo)
-
-	count := 1
-	for i := len(points) - 1; i >= 1; i-- {
-		if sX && points[i].x != points[i-1].x {
-			break
-		}
-		if sY && points[i].y != points[i-1].y {
-			break
-		}
-		count++
-	}
-	return count
-}
-
 func (p Point) adjacentPoints(maze [][]int) []Point {
 	var points []Point
 	if p.y != 0 {
@@ -206,13 +81,6 @@ func Part2(input []string) int {
 	return -1
 }
 
-func boolArrayOfSize(input []string) [][]bool {
-	traversal := make([][]bool, len(input))
-	for i := 0; i < len(input); i++ {
-		traversal[i] = make([]bool, len(input[i]))
-	}
-	return traversal
-}
 func toIntArray(input []string) [][]int {
 	rows := make([][]int, len(input))
 	for i, line := range input {
@@ -224,20 +92,4 @@ func toIntArray(input []string) [][]int {
 		rows[i] = nums
 	}
 	return rows
-}
-
-func boolArrayToString(visited [][]bool) string {
-	list := []string{}
-	for _, line := range visited {
-		str := ""
-		for _, v := range line {
-			if v {
-				str = str + "T"
-			} else {
-				str = str + "F"
-			}
-		}
-		list = append(list, str)
-	}
-	return strings.Join(list, "-")
 }
