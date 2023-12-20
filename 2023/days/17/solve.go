@@ -9,7 +9,7 @@ func GetDay() days.Day {
 }
 
 func Part1(input []string) int {
-	return dijkstra(input)
+	return dijkstra(input, 1, 3)
 }
 
 type Point struct {
@@ -78,7 +78,7 @@ func (p Point) adjacentPoints(maze [][]int) []Point {
 }
 
 func Part2(input []string) int {
-	return -1
+	return dijkstra(input, 4, 10)
 }
 
 func toIntArray(input []string) [][]int {

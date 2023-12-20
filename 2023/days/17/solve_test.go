@@ -25,7 +25,7 @@ func TestPart1_Example(t *testing.T) {
 	assert.Equal(t, 102, Part1(input))
 }
 
-func TestPart1_Playground(t *testing.T) {
+func TestPart2_Example(t *testing.T) {
 	input := []string{
 		"2413432311323",
 		"3215453535623",
@@ -41,5 +41,16 @@ func TestPart1_Playground(t *testing.T) {
 		"2546548887735",
 		"4322674655533",
 	}
-	assert.Equal(t, 102, Part1(input))
+	assert.Equal(t, 94, Part2(input))
+}
+
+func TestPart2_Example2(t *testing.T) {
+	input := []string{
+		"111111111111",
+		"999999999991",
+		"999999999991",
+		"999999999991",
+		"999999999991",
+	}
+	assert.Equal(t, 71, Part2(input))
 }
