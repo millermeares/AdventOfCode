@@ -28,8 +28,13 @@ func Part2(input []string) int {
 func countEnclosed(lines []Line) int {
 	count := 0
 	horizontalLines := sortedHorizontal(lines)
-	verticalLines := sortedVertical(lines)
+	horizontalLines = widenHorizontal(horizontalLines)
+	iter := 0
 	for len(horizontalLines) > 0 {
+		iter++
+		if iter > 100 {
+			panic("too many iterations, trying to show logs for unit test")
+		}
 		topLine := horizontalLines[0]
 		horizontalLines = horizontalLines[1:] // pop. add unmatched part at end.
 
@@ -42,17 +47,14 @@ func countEnclosed(lines []Line) int {
 			bottomLine := horizontalLines[i]
 			horizontalLines = append(horizontalLines[:i], horizontalLines[i+1:]...) // remove bottom line.
 
-			// the problem with this approach is that there can sometimes be parts of vertical lines that are missed if below a "bottomLine" on the right side. (i think)
 			yDiff := bottomLine.start.y - topLine.start.y + 1
-			overlappingX := overlappingX(topLine, bottomLine) + 1
+			overlappingX := overlappingX(topLine, bottomLine) - 1
 			areaToAdd := overlappingX * yDiff
 
 			fmt.Println("Adding", areaToAdd, "as a result of overlap between", topLine, "and", bottomLine)
 			count += areaToAdd
-			descendingVerticalLineLength := descendingVerticalLineAtCornerLength(bottomLine, verticalLines) // this is not a valid technique.
-			count += descendingVerticalLineLength
+
 			leftoverLines := subtractOverlappingX(topLine, bottomLine)
-			fmt.Println("Left with", leftoverLines, "when subtracting overlap from", topLine, bottomLine)
 			horizontalLines = append(horizontalLines, leftoverLines...)
 			break
 		}
@@ -61,36 +63,29 @@ func countEnclosed(lines []Line) int {
 	return count
 }
 
-func descendingVerticalLineAtCornerLength(bottomLine Line, verticalLines []Line) int {
-	for _, vertical := range verticalLines {
-		if vertical.top() == bottomLine.start || vertical.top() == bottomLine.end {
-			return vertical.verticalLength() - 2 // inclusive length, don't count corners
-		}
-	}
-	return 0
-}
-
 func subtractOverlappingX(l1 Line, l2 Line) []Line {
 	start, end := getOverlappingStartEndX(l1, l2)
 	remaining := removeSnippet(l1, start, end)
 	remaining = append(remaining, removeSnippet(l2, start, end)...)
+	fmt.Println("Left with", remaining, "when subtracting overlapping X", start, end, "from", l1, l2)
 	return remaining
 }
 
-// assume that both start and end of line are inclusive.
-// what are limitations of this strategy?
+// i do not want to remove the edges!!
 func removeSnippet(l Line, xStart, xEnd int) []Line {
 	var remaining []Line
 	if xStart != l.minX() {
 		remaining = append(remaining, Line{
 			start: l.start,
-			end:   Point{y: l.end.y, x: xStart - 1},
+			end:   Point{y: l.end.y, x: xStart + 1},
 		})
 	}
 
+	// the value that i add or subtract to this needs to depend on ... what?
+	// if the remaining line is to the right of the snippet, subtract one from xEnd?
 	if xEnd != l.maxX() {
 		remaining = append(remaining, Line{
-			start: Point{y: l.start.y, x: xEnd + 1},
+			start: Point{y: l.start.y, x: xEnd - 1},
 			end:   l.end,
 		})
 	}
@@ -111,7 +106,7 @@ func getOverlappingStartEndX(l1 Line, l2 Line) (int, int) {
 }
 
 func linesOverlap(l1 Line, l2 Line) bool {
-	return overlappingX(l1, l2) >= 0
+	return overlappingX(l1, l2) > 1
 }
 
 func overlappingX(l1 Line, l2 Line) int {
@@ -221,26 +216,6 @@ func (l Line) maxX() int {
 	return l.end.x
 }
 
-func (l Line) top() Point {
-	above := l.start
-	if l.start.y > l.end.y { // smaller is higher.
-		above = l.end
-	}
-	return above
-}
-
-func (l Line) bottom() Point {
-	above := l.start
-	if l.start.y < l.end.y { // bigger is lower.
-		above = l.end
-	}
-	return above
-}
-
-func (l Line) verticalLength() int {
-	return l.bottom().y - l.top().y + 1
-}
-
 func (l Line) isVertical() bool {
 	return l.start.x == l.end.x
 }
@@ -268,15 +243,12 @@ func sortedHorizontal(lines []Line) []Line {
 	return horizontal
 }
 
-func sortedVertical(lines []Line) []Line {
-	var vertical []Line
+func widenHorizontal(lines []Line) []Line {
+	var widened []Line
 	for _, line := range lines {
-		if line.isVertical() {
-			vertical = append(vertical, line)
-		}
+		widened = append(widened, Line{
+			start: Point{x: line.minX() - 1, y: line.start.y}, end: Point{x: line.maxX() + 1, y: line.end.y},
+		})
 	}
-	sort.SliceStable(vertical, func(i, j int) bool {
-		return vertical[i].start.x < vertical[j].end.x
-	})
-	return vertical
+	return widened
 }
