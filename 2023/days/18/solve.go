@@ -28,6 +28,7 @@ func Part2(input []string) int {
 func countEnclosed(lines []Line) int {
 	count := 0
 	horizontalLines := sortedHorizontal(lines)
+	verticalLines := sortedVertical(lines)
 	horizontalLines = widenHorizontal(horizontalLines)
 	iter := 0
 	for len(horizontalLines) > 0 {
@@ -37,13 +38,14 @@ func countEnclosed(lines []Line) int {
 		}
 		topLine := horizontalLines[0]
 		horizontalLines = horizontalLines[1:] // pop. add unmatched part at end.
-
+		// ok when there is no more horizontal lines, i want to
+		matched := false
 		for i := 0; i < len(horizontalLines); i++ {
-			fmt.Println(horizontalLines)
 			if !linesOverlap(topLine, horizontalLines[i]) {
-				fmt.Println(topLine, "does not overlap with", horizontalLines[i])
+				// fmt.Println(topLine, "does not overlap with", horizontalLines[i])
 				continue
 			}
+			matched = true
 			bottomLine := horizontalLines[i]
 			horizontalLines = append(horizontalLines[:i], horizontalLines[i+1:]...) // remove bottom line.
 
@@ -55,8 +57,23 @@ func countEnclosed(lines []Line) int {
 			count += areaToAdd
 
 			leftoverLines := subtractOverlappingX(topLine, bottomLine)
+			// only filter if the specific corner was removed.
+			if !containsMatchingY(leftoverLines, bottomLine) {
+				descendingVerticalLineLength := descendingVerticalLineAtCornerLength(bottomLine, verticalLines, leftoverLines)
+				// this should only happen when the bottomLine is deleted (or at least when that corner is )
+				if descendingVerticalLineLength > 0 {
+					fmt.Println("Adding", descendingVerticalLineLength, "as a descending vertical line from bottom")
+					count += descendingVerticalLineLength
+				}
+			}
+
 			horizontalLines = append(horizontalLines, leftoverLines...)
 			break
+		}
+		if !matched {
+			xDiff := topLine.end.x - topLine.start.x - 1
+			fmt.Println("Adding length", xDiff, "of", topLine, "to count as it was not matched to any")
+			count += xDiff
 		}
 		horizontalLines = sortedHorizontal(horizontalLines)
 	}
@@ -251,4 +268,78 @@ func widenHorizontal(lines []Line) []Line {
 		})
 	}
 	return widened
+}
+
+func (l Line) top() Point {
+	above := l.start
+	if l.start.y > l.end.y { // smaller is higher.
+		above = l.end
+	}
+	return above
+}
+
+func (l Line) bottom() Point {
+	above := l.start
+	if l.start.y < l.end.y { // bigger is lower.
+		above = l.end
+	}
+	return above
+}
+
+func (l Line) verticalLength() int {
+	return l.bottom().y - l.top().y + 1
+}
+
+func sortedVertical(lines []Line) []Line {
+	var vertical []Line
+	for _, line := range lines {
+		if line.isVertical() {
+			vertical = append(vertical, line)
+		}
+	}
+	sort.SliceStable(vertical, func(i, j int) bool {
+		return vertical[i].start.x < vertical[j].end.x
+	})
+	return vertical
+}
+
+// it may be possible to remove all of the leftOverLine bs here.
+func descendingVerticalLineAtCornerLength(bottomLine Line, verticalLines []Line, leftOverLines []Line) int {
+	var narrowLeftoverLines []Line
+	for _, line := range leftOverLines {
+		narrowLeftoverLines = append(narrowLeftoverLines, makeLineNarrow(line))
+	}
+	// this is a little tricky because of the stretching that i did to the lines earlier.
+	narrowerLine := makeLineNarrow(bottomLine)
+	for _, vertical := range verticalLines {
+		if vertical.top() == narrowerLine.start && !containsEquivalentPoint(narrowerLine.start, narrowLeftoverLines) {
+			return vertical.verticalLength() - 2
+		}
+		if vertical.top() == narrowerLine.end && !containsEquivalentPoint(narrowerLine.end, narrowLeftoverLines) {
+			return vertical.verticalLength() - 2
+		}
+	}
+	return 0
+}
+
+func containsEquivalentPoint(p Point, lines []Line) bool {
+	for _, line := range lines {
+		if p == line.start || p == line.end {
+			return true
+		}
+	}
+	return false
+}
+
+func makeLineNarrow(line Line) Line {
+	return Line{start: Point{y: line.start.y, x: line.start.x + 1}, end: Point{x: line.end.x - 1, y: line.end.y}}
+}
+
+func containsMatchingY(lines []Line, horizontal Line) bool {
+	for _, line := range lines {
+		if line.start.y == horizontal.start.y {
+			return true
+		}
+	}
+	return false
 }
