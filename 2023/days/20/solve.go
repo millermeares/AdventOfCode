@@ -16,6 +16,7 @@ func Part1(input []string) int {
 	highPulses := 0
 	for i := 0; i < 1000; i++ {
 		low, high, _ := pushButton(modules)
+		fmt.Println(low, high)
 		lowPulses += low
 		highPulses += high
 	}
@@ -48,15 +49,48 @@ func pushButton(modules map[string]Module) (int, int, int) {
 
 func Part2(input []string) int {
 	modules := parseInput(input)
-	rxSent := false
+	ql := modules["ql"].(*ConjunctionModule)
+	var iterationsUntilHigh []int
+	for d := range ql.receivedPulseStrength {
+		fmt.Println("Evaluating", d)
+		iterationsUntilHigh = append(iterationsUntilHigh, firstInstanceOfQlHavingHigh(input, d))
+	}
+	fmt.Println("Iterations until high for", ql.receivedPulseStrength, ":", iterationsUntilHigh)
+	return LCM(iterationsUntilHigh[0], iterationsUntilHigh[1], iterationsUntilHigh[2:])
+}
+
+func firstInstanceOfQlHavingHigh(input []string, dest string) int {
+	modules := parseInput(input)
 	count := 0
-	for !rxSent {
+	qlHasHigh := false
+	for !qlHasHigh {
 		count++
-		_, _, lowPulsesToRx := pushButton(modules)
-		// fmt.Println(lowPulsesToRx, "low pulses sent to rx in iteration", count)
-		rxSent = lowPulsesToRx == 1
+		pushButton(modules)
+		// fmt.Println(ql.receivedPulseStrength, "while waiting for", dest)
+		if pushButtonWaitForStrength(modules, dest) {
+			qlHasHigh = true
+		}
 	}
 	return count
+}
+
+func pushButtonWaitForStrength(modules map[string]Module, dest string) bool {
+	buttonPulse := Pulse{isHigh: false, destination: "broadcaster", source: "button"}
+	queue := []Pulse{buttonPulse}
+	for len(queue) > 0 {
+		pulse := queue[0]
+		queue = queue[1:]
+		if pulse.source == "ql" {
+			qlMod := modules["ql"].(*ConjunctionModule)
+			hasReceived := qlMod.receivedPulseStrength[dest]
+			if hasReceived {
+				return true
+			}
+		}
+		resultingPulses := modules[pulse.destination].processPulse(pulse)
+		queue = append(queue, resultingPulses...)
+	}
+	return false
 }
 
 type Module interface {
@@ -142,21 +176,6 @@ func (cm *ConjunctionModule) processPulse(p Pulse) []Pulse {
 	if areAllValuesHigh(cm.receivedPulseStrength) {
 		return makePulses(cm.id, cm.destinations, false)
 	} else {
-		if cm.id == "ql" {
-			highCount := 0
-			notHighCount := 0
-			for _, v := range cm.receivedPulseStrength {
-				if v {
-					highCount++
-				}
-				if !v {
-					notHighCount++
-				}
-			}
-			if highCount > 1 {
-				fmt.Println("In ql", notHighCount, "not high and", highCount, "are high")
-			}
-		}
 		return makePulses(cm.id, cm.destinations, true)
 	}
 }
@@ -254,4 +273,22 @@ func parseModule(input string) Module {
 		id:           id,
 		destinations: destinations,
 	}
+}
+
+// copy-pasted from https://go.dev/play/p/SmzvkDjYlb and amended
+func GCD(a, b int) int {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+func LCM(a, b int, integers []int) int {
+	result := a * b / GCD(a, b)
+	for i := 0; i < len(integers); i++ {
+		result = LCM(result, integers[i], integers[i+1:])
+	}
+	return result
 }
