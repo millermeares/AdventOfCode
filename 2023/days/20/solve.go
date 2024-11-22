@@ -66,7 +66,6 @@ func firstInstanceOfQlHavingHigh(input []string, dest string) int {
 	for !qlHasHigh {
 		count++
 		pushButton(modules)
-		// fmt.Println(ql.receivedPulseStrength, "while waiting for", dest)
 		if pushButtonWaitForStrength(modules, dest) {
 			qlHasHigh = true
 		}
@@ -144,13 +143,8 @@ func (fm *FlipFlopModule) processPulse(p Pulse) []Pulse {
 	if p.isHigh {
 		return []Pulse{}
 	}
-	if fm.on {
-		fm.on = false
-		return makePulses(fm.id, fm.destinations, false)
-	} else {
-		fm.on = true
-		return makePulses(fm.id, fm.destinations, true)
-	}
+	fm.on = !fm.on
+	return makePulses(fm.id, fm.destinations, fm.on)
 }
 
 type ConjunctionModule struct {
