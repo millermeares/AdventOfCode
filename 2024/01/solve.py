@@ -1,6 +1,6 @@
 one = []
 two = []
-with open("sample.txt") as file:
+with open("input.txt") as file:
   for line in file:
     one_two = line.split(' ')
     one.append(int(one_two[0]))
