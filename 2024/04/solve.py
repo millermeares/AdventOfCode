@@ -13,7 +13,6 @@ def count_horizontal_xmas(data):
 
 def reverse(data):
   # return [XOOX, XXXO] into [XOOX, OXXX]
-  print(data)
   rev = []
   for line in data:
     rev.append(line[::-1])
@@ -62,7 +61,27 @@ def part1(data):
   return count + count_horizontal_xmas(diagonals)
 
 
-
+def part2(data):
+  # x-mas. 
+  count = 0
+  for i in range(1, len(data)-1): # center of X cannot be on edge.
+    for j in range(1, len(data[i])-1): # center of X cannot be on edge
+      if data[i][j] != 'A':
+        continue
+      top_left = data[i-1][j-1]
+      bottom_right = data[i+1][j+1]
+      top_right = data[i+1][j-1]
+      bottom_left = data[i-1][j+1]
+      if (top_left == bottom_right or top_right == bottom_left):
+        # diagonals are SAS or MAM, not MAS / SAM
+        continue
+      # if all characters are Ms and Ss, it is valid.
+      if (top_left not in ['M', 'S'] or bottom_right not in ['M', 'S'] or top_right not in ['M', 'S'] or bottom_left not in ['M', 'S']):
+        continue
+      count += 1
+  return count
+      
+      
 
 
 lines = []
@@ -72,3 +91,4 @@ with open("input.txt") as file:
 
 
 print(part1(lines))
+print(part2(lines))
