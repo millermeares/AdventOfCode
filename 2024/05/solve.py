@@ -1,6 +1,9 @@
+from functools import cmp_to_key
+import random
+
 input_rules = []
 input_updates = []
-with open("sample.txt") as file:
+with open("input.txt") as file:
   reading_rules = True
   for line in file:
     stripped = line.rstrip()
@@ -52,13 +55,23 @@ def aggregate_rules(rules):
     
 
 def fix_update(update, rules_set):
-  ordered = get_sorted_pages(rules_set)
-  return sorted(update, key=lambda x: ordered.index(x))
+  def comp(first, second):
+    if second not in rules_set[first]['before'] and second not in rules_set[first]['after']:
+      return 0 # not related to each other, don't change.
+    # negative value when first should be before second.
+    if second in rules_set[first]['before']:
+      return -1
+    return 1
+    
+
+  return sorted(update, key=cmp_to_key(comp))
 
 
 def get_sorted_pages(rules_set):
   ordered = []
-  for page in rules_set.keys():
+  pages = list(rules_set.keys())
+  random.shuffle(pages)
+  for page in pages:
     must_succeed = rules_set[page]['after']
     # print(f"{page} must FOLLOW {must_succeed}")
     # insert into ordered after index of last must_succeed value.
@@ -84,21 +97,12 @@ def part1(updates, rules):
 
 def part2(updates, rules):
   rules_set = aggregate_rules(rules)
-  total = 0
+  fixed_updates = []
   for update in updates:
     if not update_is_valid(update, rules_set):
-        fixed = fix_update(update, rules_set)
-        print(fixed)
-        total += fixed[int((len(fixed)-1)/2)]
-        print()
-  return total
+        fixed_updates.append(fix_update(update, rules_set))
+  return part1(fixed_updates, rules)
 
 
 print(part1(input_updates, input_rules))
-
-rules_set = aggregate_rules(input_rules)
-
-print()
-print(get_sorted_pages(rules_set))
-print()
 print(part2(input_updates, input_rules))
