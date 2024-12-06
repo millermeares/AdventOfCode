@@ -9,13 +9,10 @@ with open("input.txt") as file:
 
 guard_chars = ['v','<','>','^']
 
-# returns whether or not we are in a cycle?
-# visited is an object { i,j: { }}
-# returns step of guard
+# returns current position of guard
 def take_guard_step(maze, guard_row, guard_column):
   i = guard_row
   j = guard_column
-  
   guard = maze[i][j]
   next_row, next_column = get_next_step_index(guard, i, j)
   maze[i][j] = 'X' # guard is walking away from this one.
@@ -51,7 +48,8 @@ def get_guard_location(maze):
         return i, j
   return -1, -1
 
-def part1(maze):
+def part1(maze_og):
+  maze = get_maze_copy(maze_og)
   guard_row, guard_column = get_guard_location(maze)
   while index_in_maze(maze, guard_row, guard_column):
     guard_row, guard_column = take_guard_step(maze, guard_row, guard_column)
@@ -60,6 +58,42 @@ def part1(maze):
   for l in maze:
     total += l.count('X')
   return total
+
+def part2(maze_og):
+  cycles = 0
+  for i in range(0, len(maze_og)):
+    for j in range(0, len(maze_og[i])):
+      if obstacle_would_create_cycle(i, j, maze_og):
+        cycles += 1
+  return cycles
+
+
+def obstacle_would_create_cycle(i, j, maze_og):
+  if maze_og[i][j] != '.':
+    return False # can only place obstacles on .
+  maze = get_maze_copy(maze_og) # take_guard_step modifies the maze.
+  maze[i][j] = '#' # try putting obstacle here
+  guard_row, guard_column = get_guard_location(maze)
+  # visited is an object { i,j: [<, >, ^]} # where the value is the different 'guard' values at that index
+  visited = {}
+  while index_in_maze(maze, guard_row, guard_column):
+    guard = maze[guard_row][guard_column]
+    vis_key = f"{guard_row},{guard_column}"
+    if vis_key not in visited:
+      visited[vis_key] = []
+    is_cycle = guard in visited[vis_key]
+    visited[vis_key].append(guard)
+    if is_cycle:
+      return True
+    guard_row, guard_column = take_guard_step(maze, guard_row, guard_column)
+  return False # while loop completed which means guard exited and not a cycle.
+        
+
+def get_maze_copy(maze):
+  maze_copy = []
+  for l in maze:
+    maze_copy.append(list(copy.deepcopy(l)))
+  return maze_copy
 
 def get_right_turn_guard_char(c):
   if c == '^':
@@ -71,4 +105,6 @@ def get_right_turn_guard_char(c):
   else: # guard = 'v'
     return '<'
 
+
 print(part1(maze_input))
+print(part2(maze_input))
