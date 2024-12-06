@@ -1,8 +1,10 @@
+import copy
+
 maze_input = []
 
-with open("sample.txt") as file:
+with open("input.txt") as file:
   for line in file:
-    maze_input.append(list(line))
+    maze_input.append(list(line.rstrip()))
 
 
 guard_chars = ['v','<','>','^']
@@ -27,6 +29,7 @@ def take_guard_step(maze):
 
 def take_step_up(maze, guard_row, guard_column):
   if guard_row == 0:
+    print("guard walked out of top of maze")
     return # guard at top of maze, steps out.
   next_step = maze[guard_row-1][guard_column]
   if next_step == '#': # can't step up, turn 90 degrees.
@@ -37,6 +40,7 @@ def take_step_up(maze, guard_row, guard_column):
 
 def take_step_down(maze, guard_row, guard_column):
   if guard_row+1 == len(maze): # guard at bottom of maze, steps out
+    print("guard walked out of bottom of maze")
     return
   next_step = maze[guard_row+1][guard_column]
   if next_step == '#':
@@ -47,6 +51,7 @@ def take_step_down(maze, guard_row, guard_column):
 
 def take_step_right(maze, guard_row, guard_column):
   if guard_column+1 == len(maze[guard_row]): # guard at right of maze, steps out.
+    print("guard walked out right of maze")
     return
   next_step = maze[guard_row][guard_column+1]
   if next_step == '#':
@@ -57,6 +62,7 @@ def take_step_right(maze, guard_row, guard_column):
 
 def take_step_left(maze, guard_row, guard_column):
   if guard_column == 0: # guard at left of maze, steps out
+    print("guard walked out of left of maze")
     return
   next_step = maze[guard_row][guard_column-1]
   if next_step == '#':
@@ -72,7 +78,10 @@ def is_guard_in_maze(maze):
 def replace(str, c, idx):
   return str[:idx] + c + str[idx+1:]
 
-def part1(maze):
+def part1(maze_og):
+  maze = []
+  for l in maze_og:
+    maze.append(list(copy.deepcopy(l)))
   while is_guard_in_maze(maze):
     take_guard_step(maze)
   # count 'X'
@@ -81,5 +90,32 @@ def part1(maze):
     total += l.count('X')
   return total
 
+def get_right_turn_guard_char(c):
+  if c == '^':
+    return '>'
+  elif c == '<':
+    return '^'
+  elif c == '>':
+    return 'v'
+  else: # guard = 'v'
+    return '<'
+
+# takes [XO, XO] and turns it onto [XX, OO]
+def flip90(data):
+  flipped = []
+  for i in range(0, len(data[0])):
+    flipped_line = ""
+    for line in data:
+      c = line[i]
+      if c in guard_chars:
+        c = get_right_turn_guard_char(c)
+      flipped_line += c
+    flipped.append(list(flipped_line))
+  return flipped
 
 print(part1(maze_input))
+# print(maze_input)
+# for i in range(0, 4):
+#   maze_input = flip90(maze_input)
+#   print(maze_input)
+#   print(part1(maze_input))
