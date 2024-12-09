@@ -52,27 +52,27 @@ def compact(disk):
 # what is recursion exit case?? i think it will happen automatically
 # we only want to move a file once. not sure if we are doing that right at the moment.
 def compact_no_fragmentation(disk):
-  (fs, fe) = get_next_file(disk)
-  if fs == -1 and fe == -1:
-    return disk # no more files to find - already compact
-  
-  f = disk[fs:fe+1]
-  print(f"Evaluating moving file {f}")
-  # find the left-most free space that would fit the file. space must be before
-  (es, ee) = find_leftmost_free_space(disk[:fs], fe - fs + 1)
-  if es == -1 and ee == -1:
-    # this file cannot fit in any space- recurse and just append rest.
-    return compact_no_fragmentation(disk[:fs]) + disk[fs:]
-  # swap disk[fs:fe+1], disk[es, ee+1]
-  e = disk[es:es + len(f)]
-  disk = disk[:es] + f + disk[es + len(f):]
-  disk = disk[:fs] + e + disk[fe+1:]
-  # everything after fs has already been considered
-  return compact_no_fragmentation(disk[:fs]) + disk[fs:] 
+  (fs, fe) = get_next_file(disk, len(disk))
+  while fs != -1 and fe != -1:
+    f = disk[fs:fe+1]
+    print(f"Evaluating moving file {f}")
+    # find the left-most free space that would fit the file. space must be before
+    (es, ee) = find_leftmost_free_space(disk[:fs], fe - fs + 1)
+    if es == -1 and ee == -1:
+      # this file cannot fit in any space - move to next file.
+      (fs, fe) = get_next_file(disk, fs)
+      continue
+    # swap disk[fs:fe+1], disk[es, ee+1]
+    e = disk[es:es + len(f)]
+    disk = disk[:es] + f + disk[es + len(f):]
+    disk = disk[:fs] + e + disk[fe+1:]
+    # everything after fs has already been considered, move to next file.
+    (fs, fe) = get_next_file(disk, fs)
+  return disk
 
 
-def get_next_file(disk):
-  i = len(disk)
+def get_next_file(disk, last_index):
+  i = last_index
   while i >= 1:
     i -= 1
     if disk[i] == '.':
@@ -150,9 +150,8 @@ def part1(input):
 def part2(input):
   disk = get_disk_map(input)
   compacted = compact_no_fragmentation(disk)
-  print(''.join(compacted))
   return calculate_checksum(compacted)
 
 
-#print(part1(input))
+print(part1(input))
 print(part2(input))
