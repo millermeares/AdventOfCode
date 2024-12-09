@@ -1,4 +1,7 @@
-input = open("2024/09/sample.txt").readline()
+input = open("2024/09/input.txt").readline()
+
+def s(arr):
+  return ''.join(arr)
 
 def get_disk_map(input):
   # take input and read as alternating sets of 'file size (and id index) and file space
@@ -38,7 +41,6 @@ def compact(disk):
   last_full = get_last_full_idx(disk)
   # if first_empty is *after* last_full, then it's already compact. return disk.
   while not first_empty > last_full:
-    print(f"First empty is at {first_empty}, last full is at {last_full}")
     v = disk[last_full]
     disk[last_full] = disk[first_empty]
     disk[first_empty] = v
@@ -47,36 +49,64 @@ def compact(disk):
   return disk
 
 
-# this currently tries to fill each empty spot. 
-# bad requirement: only evaluating each file once.
+# what is recursion exit case?? i think it will happen automatically
+# we only want to move a file once. not sure if we are doing that right at the moment.
 def compact_no_fragmentation(disk):
-  print(f"Evaluating {''.join(disk)}")
-  first_empty = get_first_empty_idx(disk)
-  if first_empty == -1: return disk # no more empty sections left.
-  # get of first_empty
-  empty_count = 0
-  for i in range(first_empty, len(disk)):
-    if disk[i] == '.':
-      empty_count += 1
-    else:
-      break
-  (fs, fe) = find_file_less_than_or_equal_to_size(disk, empty_count)
+  (fs, fe) = get_next_file(disk)
   if fs == -1 and fe == -1:
-    # this section cannot be replaced. recurse evaluate compact rest of disk, everything is good up to this point.
-    return disk[:first_empty + empty_count] + compact_no_fragmentation(disk[first_empty + empty_count:])
-  # swap disk[first_empty, last_empty_idx+1] with disk[fs, fe+1]
-  f = disk[fs: fe+1]
-  print(f"Choosing {''.join(f)} to swap into spot.")
-  # put file in position
-  empty_replaced = disk[first_empty:first_empty + len(f)]
-  disk = disk[:first_empty] + f + disk[first_empty + len(f):] 
-  disk = disk[:fs] + empty_replaced + disk[fe+1:]
-  # if there is no free space to fit the file, the file does not move. chop off the end.
-
-  return compact_no_fragmentation(disk[:fe+1]) + disk[fe+1:] 
+    return disk # no more files to find - already compact
   
+  f = disk[fs:fe+1]
+  print(f"Evaluating moving file {f}")
+  # find the left-most free space that would fit the file. space must be before
+  (es, ee) = find_leftmost_free_space(disk[:fs], fe - fs + 1)
+  if es == -1 and ee == -1:
+    # this file cannot fit in any space- recurse and just append rest.
+    return compact_no_fragmentation(disk[:fs]) + disk[fs:]
+  # swap disk[fs:fe+1], disk[es, ee+1]
+  e = disk[es:es + len(f)]
+  disk = disk[:es] + f + disk[es + len(f):]
+  disk = disk[:fs] + e + disk[fe+1:]
+  # everything after fs has already been considered
+  return compact_no_fragmentation(disk[:fs]) + disk[fs:] 
 
 
+def get_next_file(disk):
+  i = len(disk)
+  while i >= 1:
+    i -= 1
+    if disk[i] == '.':
+      continue
+    # found a non-empty space. check if this file is less than or equal to 'empty' space.
+    start_idx = i
+    c = disk[i]
+    for j in range(i, -1, -1):
+      if disk[j] == c:
+        start_idx = j
+      else:
+        break
+    return (start_idx, i)
+  return -1, -1 # no more files to move?
+
+
+def find_leftmost_free_space(disk, size):
+  i = -1
+  while i < len(disk) - 1:
+    i += 1
+    if disk[i] != '.':
+      continue 
+    # we are at left-most 
+    end_idx = i
+    for j in range(i, len(disk)):
+      if disk[j] == '.':
+        end_idx = j
+      else:
+        break
+    empty_size = end_idx - i + 1
+    if empty_size >= size:
+      return (i, end_idx)
+    i = end_idx
+  return -1, -1
 
 # returns start and end index of 
 def find_file_less_than_or_equal_to_size(disk, size):
@@ -124,5 +154,5 @@ def part2(input):
   return calculate_checksum(compacted)
 
 
-print(part1(input))
+#print(part1(input))
 print(part2(input))
