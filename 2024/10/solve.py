@@ -1,5 +1,8 @@
 grid = [list(map(int, line.strip())) for line in open("2024/10/input.txt")] 
 
+trailheads = [
+  (j, i) for j, row in enumerate(grid) for i, height in enumerate(row) if height == 0
+]
 # returns a list of paths reached. duplicates will happen, if they are reached by different paths.
 def paths_to_peaks(grid, i, j):
   cur = grid[i][j]
@@ -17,21 +20,5 @@ def paths_to_peaks(grid, i, j):
   return peaks
 
 
-def part1(grid):
-  total = 0
-  for i in range(0, len(grid)):
-    for j in range(0, len(grid[i])):
-      if grid[i][j] == 0:
-        total += len(set(paths_to_peaks(grid, i, j)))
-  return total
-
-def part2(grid):
-  total = 0
-  for i in range(0, len(grid)):
-    for j in range(0, len(grid[i])):
-      if grid[i][j] == 0:
-        total += len(paths_to_peaks(grid, i, j))
-  return total
-
-print(part1(grid))
-print(part2(grid))
+print(sum(len(set(paths_to_peaks(grid, i, j))) for (i, j) in trailheads))
+print(sum(len(paths_to_peaks(grid, i, j)) for (i, j) in trailheads))
