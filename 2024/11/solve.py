@@ -3,16 +3,7 @@ from functools import cache
 
 stones = open("2024/11/input.txt").read().rstrip().split(' ')
 
-# can i leverage memoization?
-@record_time
-def blink(stones):
-  new_stones = []
-  for i in range(0, len(stones)):
-    new_stones += single_blink(stones[i])
-  return new_stones
-
-@cache
-def single_blink(stone):
+def stone_blink(stone):
   new_stones = []
   if stone == '0':
     new_stones.append('1')
@@ -25,15 +16,17 @@ def single_blink(stone):
     new_stones.append(str(int(stone) * 2024))
   return new_stones
 
+@cache
+def count_stones_after_blinks(stone, blinks):
+  if blinks == 0:
+    return 1
+  next_stones = stone_blink(stone)
+  return sum(count_stones_after_blinks(s, blinks-1) for s in next_stones)
+  
 
 def do_blinks(stones, blinks):
-  while blinks > 0:
-    print(f"{blinks} blinks remaining for {len(stones)} stones.")
-    blinks -= 1
-    stones = blink(stones)
-  return stones
+  return sum(count_stones_after_blinks(s, blinks) for s in stones)
 
-# i'm not sure how i can make this faster
-# each stone can be treated independently - they do not interact with each other at all once process starts.
-print(len(do_blinks(stones, 25)))
-print(len(do_blinks(stones, 75)))
+# treat each stone independently, as they do not interact with each other once the simulation starts. 
+print(do_blinks(stones, 25))
+print(do_blinks(stones, 75))
