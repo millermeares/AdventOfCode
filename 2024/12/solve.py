@@ -11,7 +11,6 @@ def get_area_perim_for_region(grid, x, y, visited):
   plot_count = 0
   plot_perim = 0
   corners = count_corners(grid, x, y)
-  # gets area and perimeter of region.
   steps = [(1, 0), (-1, 0), (0, 1), (0, -1)]
   for (cx, cy) in steps:
     (nx, ny) = (cx+x, cy+y)
@@ -42,7 +41,7 @@ def count_corners(grid, x, y):
       e_corners +=1
 
   if not is_matching(grid, cur, x, y-1):
-    # below is matching.
+    # below is not matching.
     if not is_matching(grid, cur, x+1, y):
       e_corners += 1
     if not is_matching(grid, cur, x-1, y):
