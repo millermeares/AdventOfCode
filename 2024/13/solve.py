@@ -2,20 +2,25 @@ import sys
 import math
 
   
-def calculate_tokens_to_reach(ax, ay, bx, by, px, py, limit, add_prize_dist = 0):
-  px += add_prize_dist
-  py += add_prize_dist
-  print(f"Beginning game calculations for {(px, py)}")
+
+def extended_gcd(a, b):
+  if b == 0:
+    return a, 1, 0
+  g, x1, y1 = extended_gcd(b, a % b)
+  x = y1
+  y = x1 - (a // b) * y1
+  return g, x, y
+
+def calculate_tokens_to_reach(ax, ay, bx, by, px, py, limit):
+  if px % math.gcd(ax, bx) != 0 or py % math.gcd(ay, by) != 0:
+    return sys.maxsize # not possible!
+  
   tokens = sys.maxsize
   # figure out combinations that make it reachable. 
   max_a = min(limit, math.floor(px / ax), math.floor(py / ay))+1 # add one to make sure that pressing button 0 times is considered
   for a in range(0, max_a):
-    # if a combo not feasible, continue?
-    (restX, restY) = (px - ax * a, py - ay * a)
-    # restX must be divisible by GCD(ax, bx)
-    if restX % math.gcd(ax, bx) != 0 or restY % math.gcd(ay, by) != 0:
-      continue # no combination of b will make this feasible.
-    # i don't need to be iterating here.
+    if a % 1000000 == 0:
+      print(f"{a}/{max_a}")
     if (px - (a *ax)) % bx != 0 or round((px - (a *ax)) / bx) != round((py - (a *ay)) / by) :
       continue # not feasbible
     b = round((px - (a *ax)) / bx)
@@ -53,10 +58,11 @@ def parse_games():
 games = parse_games()
 def calculate(limit, add_prize_dist):
   tokens = 0
-  for game in games:
+  for i, game in enumerate(games):
     (ax, ay) = game[0]
     (bx, by) = game[1]
     (px, py) = game[2]
+    print(f"Calculating game {i}")
     tokens_to_win = calculate_tokens_to_reach(ax, ay, bx, by, px + add_prize_dist, py + add_prize_dist, limit)
     if tokens_to_win != sys.maxsize:
       tokens += tokens_to_win
