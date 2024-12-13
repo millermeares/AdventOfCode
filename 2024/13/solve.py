@@ -14,6 +14,10 @@ class Game:
       'a': 3,
       'b': 1
     }
+  
+  def memo_key_from_state(self):
+    # return a memo key for presses and 
+    return f"{self.presses['a']},{self.presses['b']}"
 
   def print_game_state(self):
     print(f"Spent {self.tokens_spent} tokens")
@@ -44,8 +48,11 @@ class Game:
     (prizeX, prizeY) = self.prize_coords
     return curX > prizeX or curY > prizeY
 
-  def min_tokens_to_reach(self):
-    self.print_game_state()
+  def min_tokens_to_reach(self, memo):
+    key = self.memo_key_from_state()
+    if key in memo:
+      return memo[key]
+    # self.print_game_state()
     if self.at_prize():
       return self.tokens_spent # made it!
     if self.already_passed():
@@ -56,16 +63,39 @@ class Game:
       if self.presses[button] >= 100:
         continue # already pressed this button 100 times
       self.press(button)
-      min_tokens - min(min_tokens, self.min_tokens_to_reach())
+      min_tokens = min(min_tokens, self.min_tokens_to_reach(memo))
       self.unpress(button) # undo
-    return min_tokens
+    memo[key] = min_tokens
+    return memo[key]
+  
+  def calculate_tokens_to_reach(self, limit):
+    (ax, ay) = self.a_diff
+    (bx, by) = self.b_diff
+    (px, py) = self.prize_coords
+    tokens = sys.maxsize
+    # figure out combinations that make it reachable. 
+    for a in range(0, limit+1):
+      for b in range(0, limit+1):
+        x_reach = (ax * a) + (bx * b) == px
+        y_reach = (ay * a) + (by * b) == py
+        if not x_reach or not y_reach:
+          continue
+        iter_tokens = (a * 3) + (b * 1)
+        if iter_tokens < tokens:
+          tokens = iter_tokens
+          print(f"New cheaper way - a {a} times, b {b} times")
+    return tokens
+
+
+
+
 
 def get_button_diff(line):
   suff = line.split(":")[1].lstrip().split(",")
   return (int(suff[0].split("+")[1]), int(suff[1].split("+")[1]))
 
 games = []
-with open("2024/13/sample.txt") as file:
+with open("2024/13/input.txt") as file:
   game_in = []
   for line in file:
     if line.rstrip() == '':
@@ -83,11 +113,18 @@ with open("2024/13/sample.txt") as file:
 
 def part1(games):
   total_tokens = 0
-  for game in games:
-    tokens_to_win = game.min_tokens_to_reach()
+  for i, game in enumerate(games):
+    print(f"Calculating for game {i} of {len(games)}")
+    tokens_to_win = game.calculate_tokens_to_reach(100)
+    # brute = game.min_tokens_to_reach({})
     if tokens_to_win != sys.maxsize:
       total_tokens += tokens_to_win
+      print(f"Calculated tokens {tokens_to_win} for game {i} of {len(games)}")
+    else:
+      print(f"Could not reach end for game {i}")
+
   return total_tokens
+
 
 print(part1(games))
 
