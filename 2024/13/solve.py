@@ -2,9 +2,6 @@ import sys
 import math
 
 def calculate_tokens_to_reach(ax, ay, bx, by, px, py, limit):
-  # unsure if this is appropriate here. it changes output at highest number which is odd.
-  if px % math.gcd(ax, bx) != 0 or py % math.gcd(ay, by) != 0:
-    return sys.maxsize # not possible!
   # solve system of equations by elimination.
   mult = -1 * (by / bx)
   px_mult = mult * px
