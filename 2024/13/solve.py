@@ -14,12 +14,20 @@ def calculate_tokens_to_reach(game, limit, add_prize_dist = 0):
   # figure out combinations that make it reachable. 
   max_a = min(limit, math.floor(px / ax), math.floor(py / ay))+1 # add one to make sure that pressing button 0 times is considered
   max_b = min(limit, math.floor(px / bx), math.floor(py / by))+1
+  print(f"{max_a * max_b} theoretical combinations")
   for a in range(0, max_a):
+    # if a combo not feasible, continue?
+    (restX, restY) = (px - ax * a, py - ay * a)
+    # restX must be divisible by GCD(ax, bx)
+    if restX % math.gcd(ax, bx) != 0 or restY % math.gcd(ay, by) != 0:
+      print(f"Stopping at {a} because not feasible")
+      continue # no combination of b will make this feasible.
     for b in range(0, max_b):
       x_reach = (ax * a) + (bx * b) == px
       y_reach = (ay * a) + (by * b) == py
       if not x_reach or not y_reach:
         continue
+      print("Reached the prize")
       iter_tokens = (a * 3) + (b * 1)
       if iter_tokens < tokens:
         tokens = iter_tokens
@@ -44,7 +52,7 @@ def parse_game(game_in):
 
 def parse_games():
   games = []
-  with open("2024/13/input.txt") as file:
+  with open("2024/13/sample.txt") as file:
     game_in = []
     for line in file:
       if line.rstrip() == '':
