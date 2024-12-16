@@ -2,31 +2,12 @@ import sys
 import random
 
 # python default recursion limit is only 1000. 
-sys.setrecursionlimit(10**6)
+
 
 maze = []
 with open("2024/16/input.txt") as file:
   for line in file:
     maze.append(list(line.rstrip()))
-
-# this works but is too expensive.
-def cheapest_path(maze, x, y, prevX, prevY, visited):
-  print(f"Path from ({x}, {y})")
-  if maze[y][x] == 'E':
-    return 0 # we're here! 
-  visited.add((x, y))
-  changes = [(0, 1), (0, -1), (-1, 0), (1, 0)]
-  random.shuffle(changes)
-  cost = sys.maxsize
-  for (cx, cy) in changes:
-    (nx, ny) = (x + cx, y + cy)
-    if (nx, ny) in visited or maze[ny][nx] == '#':
-      continue # already visited
-    # no need to account for backwards moves because 'visited' does that.
-    move_cost = 1001 if is_90_turn(x, y, prevX, prevY, nx, ny) else 1
-    cost = min(cost, move_cost + cheapest_path(maze, nx, ny, x, y, visited))
-  visited.remove((x, y))
-  return cost
 
 def is_90_turn(x, y, prevX, prevY, nx, ny):
   return not ((x == prevX and prevX == nx) or (y == prevY and prevY == ny))
@@ -43,7 +24,7 @@ def print_maze(maze, visited):
     l = ''
     for x, c in enumerate(line):
       if (x, y) in visited:
-        l += '&'
+        l += 'O'
       else:
         l += c
     print(l)
@@ -70,7 +51,6 @@ def fill(maze, costs):
   queue.append((ex, ey))
   while len(queue) > 0:
     (x, y) = queue.pop(0)
-    print(x, y)
     neighbors = get_neighbors(maze, x, y)
     for (nx, ny) in neighbors:
       should_update = False
@@ -89,8 +69,6 @@ def fill(maze, costs):
       if should_update:
         queue.append((nx, ny))
 
-  
-
 def get_neighbors(maze, x, y):
   neighbors = []
   changes = [(0, 1), (0, -1), (1, 0), (-1, 0)]
@@ -100,16 +78,35 @@ def get_neighbors(maze, x, y):
       neighbors.append((nx, ny))
   return neighbors
 
+def get_members_of_pathways(x, y, prevX, prevY, costs):
+  members = [(x, y)]
+  if costs[y][x]['horizontal'] == 0:
+    return members # we are at the end!
+  neighbors = get_neighbors(maze, x, y)
+  min_cost = sys.maxsize
+  # figure out which neighbor(s) can be reached through the min cost.
+  # bug - i'm preferring to turn for some reason. 
+  for (nx, ny) in neighbors:
+    is_horizontal = ny == y
+    cost = costs[ny][nx]['horizontal'] if is_horizontal else costs[ny][nx]['vertical']
+    if is_90_turn(x, y, prevX, prevY, nx, ny):
+      cost += 1000 # going to this square would be changing direction.
+    if min_cost > cost:
+      min_cost = cost
+  for (nx, ny) in neighbors:
+    is_horizontal = ny == y
+    cost = costs[ny][nx]['horizontal'] if is_horizontal else costs[ny][nx]['vertical']
+    if is_90_turn(x, y, prevX, prevY, nx, ny):
+      cost += 1000 # going to this square would be changing direction.
+    if cost == min_cost:
+      members += get_members_of_pathways(nx, ny, x, y, costs)
+  return members
 
 
-def part1(maze):
-  costs = get_cost_grid(maze)
-  # can i do with dp?
-  (sx, sy) = find_location(maze, 'S')
-  fill(maze, costs)
-  return costs[sy][sx]
-  # return cheapest_path(maze, sx, sy, sx-1, sy, set())
 
-
-
-print(part1(maze))
+costs = get_cost_grid(maze)
+(sx, sy) = find_location(maze, 'S')
+fill(maze, costs)
+print(f"Part 1: {costs[sy][sx]['horizontal']}")
+path_members = get_members_of_pathways(sx, sy, sx-1, sy, costs)
+print(f"Part 2: {len(list(set(path_members)))}")
