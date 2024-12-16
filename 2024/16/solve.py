@@ -103,10 +103,9 @@ def get_members_of_pathways(x, y, prevX, prevY, costs):
   return members
 
 
-
 costs = get_cost_grid(maze)
 (sx, sy) = find_location(maze, 'S')
 fill(maze, costs)
-print(f"Part 1: {costs[sy][sx]['horizontal']}")
+print(f"Part 1: {costs[sy][sx]['horizontal']}") # horizontal because we start facing east.
 path_members = get_members_of_pathways(sx, sy, sx-1, sy, costs)
 print(f"Part 2: {len(list(set(path_members)))}")
