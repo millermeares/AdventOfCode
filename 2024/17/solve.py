@@ -1,4 +1,9 @@
 from abc import ABC, abstractmethod
+import math
+import sys
+
+sys.setrecursionlimit(10**6)
+
 
 lines = open("2024/17/input.txt").readlines()
 def read_register_in(line):
@@ -24,8 +29,8 @@ def combo_operand(operand, registers):
   raise Exception(f"Invalid operand: {operand}")
 
 class InstructionPointer():
-  def __init__(self):
-    self.val = 0
+  def __init__(self, v):
+    self.val = v
     self.i = 0
 
   def get(self):
@@ -65,7 +70,7 @@ class Bst(Instruction):
 
 class Jnz(Instruction):
   def do(self, operand, registers, pointer):
-    if (registers['A']) == 0:
+    if registers['A'] == 0:
       pointer.add(2)
       return
     pointer.set(operand)
@@ -124,7 +129,7 @@ def out_equal_so_far(output, program):
   return True
 
 def run(registers, program, cancel_if_not_equal):
-  pointer = InstructionPointer()
+  pointer = InstructionPointer(0)
   output = []
   while pointer.get() < len(program):
     opcode = program[pointer.get()]
@@ -136,23 +141,57 @@ def run(registers, program, cancel_if_not_equal):
     # print(f"Did instruction: {type(instruction).__name__} resulting in registers {registers}")
   return output, pointer.executed()
 
-def find_lowest_copy(registers, program):
+def find_lowest_copy(registers, program, start, up_by, max_tries):
+  base_a = start
   output = []
-  a_init = -1
-  e = 0
-  while output != program:
-    if a_init % 10000 == 0:
-      print(f"{a_init} A start value did not result in output, {e} instructions executed")
-      e = 0
-    a_init += 1
+  best = []
+  prod_best = []
+  tries = 0
+  while output != program: # and max_tries > tries:
+    if tries % 100000 == 0:
+      print(f"{base_a}: {best} so far produced by {prod_best}")
+    tries += 1
+    base_a += up_by
+    a_init = base_a
     registers['A'] = a_init
     registers['B'] = 0
     registers['C'] = 0
-    output, executed = run(registers, program, True)
-    e += executed
-  return a_init
+    output, _ = run(registers, program, True)
+    same = len(best) > 0 and len(best[0]) == len(output)
+    if same:
+      best.append(output)
+      prod_best.append(a_init)
+    better = len(best) == 0 or len(output) > len(best[0])
+    if better:
+      prod_best = [a_init]
+      best = [output]
 
+  return base_a, best, prod_best
 
 output, _ = run(registers, program, False)
 print(','.join(map(str, output)))
-print(find_lowest_copy(registers, program))
+lowest, _, _ = find_lowest_copy(registers, program, 10**12, 1, sys.maxsize)
+print(lowest)
+
+# seed_out, seed_in = find_lowest_copy(registers, program, -1, 1, 10 ** 8)
+# print(f"Exploring further with seeds, {seed_in} which produced {seed_out}")
+
+
+# finders = []
+# for seed in seed_in:
+#   start = seed * int((10 ** 11) / seed)
+#   end = 10 ** 14
+#   explore_out, explore_in = find_lowest_copy(registers, program, start, seed, 10 ** 8) # just a million tries for now.
+#   print(f"First million tries for {seed} produced {explore_out} from {explore_in}")
+#   for i in range(0, len(explore_in)):
+#     o = explore_out[i]
+#     ein = explore_in[i]
+#     if o == program:
+#       print(f"Produced the appropriate values from {seed} seed and {ein} A register")
+#       finders.append(ein)
+
+
+# if len(finders) > 0:
+#   print(f"Found: {min(finders)}")
+# else:
+#   print("Did not find any producers")
