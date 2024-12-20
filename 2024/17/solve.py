@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import math
 import sys
 
 sys.setrecursionlimit(10**6)
@@ -19,12 +18,16 @@ program = list(map(int, lines[-1].split(":")[1].rstrip().split(",")))
 
 def combo_operand(operand, registers):
   if operand < 4:
+    print(f"Literal combo operand {operand}")
     return operand
   if operand == 4:
+    print(f"Combo operand from register A")
     return registers['A']
   if operand == 5:
+    print(f"Combo operand from register B")
     return registers['B']
   if operand == 6:
+    print(f"Combo operand from register C")
     return registers['C']
   raise Exception(f"Invalid operand: {operand}")
 
@@ -55,30 +58,40 @@ class Instruction(ABC):
 
 class Adv(Instruction):
   def do(self, operand, registers, pointer):
-    registers['A'] = int(registers['A'] / pow(2, combo_operand(operand, registers)))
+    val = int(registers['A'] / pow(2, combo_operand(operand, registers)))
+    print(f"Adv changing register A from {registers['A']} to {val}")
+    registers['A'] = val
     pointer.add(2)
 
 class Bxl(Instruction):
   def do(self, operand, registers, pointer):
-    registers['B'] = registers['B'] ^ operand
+    val = registers['B'] ^ operand
+    print(f"Bxl changing register B from {registers['B']} to {val}")
+    registers['B'] = val
     pointer.add(2)
 
 class Bst(Instruction):
   def do(self, operand, registers, pointer):
-    registers['B'] = combo_operand(operand, registers) % 8
+    val = combo_operand(operand, registers) % 8
+    print(f"Bst changing register B from {registers['B']} to {val}")
+    registers['B'] = val
     pointer.add(2)
 
 class Jnz(Instruction):
   def do(self, operand, registers, pointer):
     if registers['A'] == 0:
+      print(f"Jnz not setting pointer as Register A has 0.")
       pointer.add(2)
       return
+    print(f"Jnz setting pointer to {operand} with {registers}")
     pointer.set(operand)
     
     
 class Bxc(Instruction):
   def do(self, operand, registers, pointer):
-    registers['B'] = registers['B'] ^ registers['C']
+    val = registers['B'] ^ registers['C']
+    print(f"Bxc changing register B from {registers['B']} to {val}")
+    registers['B'] = val
     pointer.add(2)
 
 class Out(Instruction):
@@ -86,19 +99,26 @@ class Out(Instruction):
     self.output = output
 
   def do(self, operand, registers, pointer):
-    self.output.append(combo_operand(operand, registers) % 8)
+    val = combo_operand(operand, registers) % 8
+    print(f"Out outputting {val} from pointer {pointer.get()}")
+    print()
+    self.output.append(val)
     pointer.add(2)
 
 
 class Bdv(Instruction):
   def do(self, operand, registers, pointer):
-    registers['B'] = int(registers['A'] / pow(2, combo_operand(operand, registers)))
+    val = int(registers['A'] / pow(2, combo_operand(operand, registers)))
+    print(f"Bdv changing register B from {registers['B']} to {val}")
+    registers['B'] = val
     pointer.add(2)
 
 
 class Cdv(Instruction):
   def do(self, operand, registers, pointer):
-    registers['C'] = int(registers['A'] / pow(2, combo_operand(operand, registers)))
+    val = int(registers['A'] / pow(2, combo_operand(operand, registers)))
+    print(f"Bdv changing register B from {registers['C']} to {val}")
+    registers['C'] = val
     pointer.add(2)
 
 def get_instruction(opcode, output):
@@ -132,66 +152,54 @@ def run(registers, program, cancel_if_not_equal):
   pointer = InstructionPointer(0)
   output = []
   while pointer.get() < len(program):
+    print(f"Pointer: {pointer.get()}")
     opcode = program[pointer.get()]
     operand = program[pointer.get()+1]
     instruction = get_instruction(opcode, output)
     instruction.do(operand, registers, pointer)
+    # print()
     if cancel_if_not_equal and not out_equal_so_far(output, program):
       break
     # print(f"Did instruction: {type(instruction).__name__} resulting in registers {registers}")
-  return output, pointer.executed()
+  return output
 
-def find_lowest_copy(registers, program, start, up_by, max_tries):
-  base_a = start
-  output = []
-  best = []
-  prod_best = []
-  tries = 0
-  while output != program: # and max_tries > tries:
-    if tries % 100000 == 0:
-      print(f"{base_a}: {best} so far produced by {prod_best}")
-    tries += 1
-    base_a += up_by
-    a_init = base_a
-    registers['A'] = a_init
-    registers['B'] = 0
-    registers['C'] = 0
-    output, _ = run(registers, program, True)
-    same = len(best) > 0 and len(best[0]) == len(output)
-    if same:
-      best.append(output)
-      prod_best.append(a_init)
-    better = len(best) == 0 or len(output) > len(best[0])
-    if better:
-      prod_best = [a_init]
-      best = [output]
+# copied from pignataj github as I've had a very hard time with this problem.
+def search(program):
+    target = list(reversed(program))
+    candidates = []
 
-  return base_a, best, prod_best
+    # i have no idea how this works!
+    def step(A):
+        # this is the part that i have to figure out for myself.
+        B = A & 7
+        B ^= 1
+        C = A // (2**B)
+        A //= 2**3
+        B ^= 4
+        B ^= C
 
-output, _ = run(registers, program, False)
-print(','.join(map(str, output)))
-lowest, _, _ = find_lowest_copy(registers, program, 10**12, 1, sys.maxsize)
-print(lowest)
+        return B & 7
 
-# seed_out, seed_in = find_lowest_copy(registers, program, -1, 1, 10 ** 8)
-# print(f"Exploring further with seeds, {seed_in} which produced {seed_out}")
+    def find(A, column=0):
+        if step(A) == target[column]:
+            if column == len(target) - 1:
+                yield A
+            else:
+                for i in range(8):
+                    yield from find(A * 8 + i, column + 1)
 
+    for A in range(8):
+        candidates.extend(list(find(A)))
 
-# finders = []
-# for seed in seed_in:
-#   start = seed * int((10 ** 11) / seed)
-#   end = 10 ** 14
-#   explore_out, explore_in = find_lowest_copy(registers, program, start, seed, 10 ** 8) # just a million tries for now.
-#   print(f"First million tries for {seed} produced {explore_out} from {explore_in}")
-#   for i in range(0, len(explore_in)):
-#     o = explore_out[i]
-#     ein = explore_in[i]
-#     if o == program:
-#       print(f"Produced the appropriate values from {seed} seed and {ein} A register")
-#       finders.append(ein)
+    return min(candidates)
+
+# output = run(registers, program, False)
+# print(','.join(map(str, output)))
+# print(search(program))
 
 
-# if len(finders) > 0:
-#   print(f"Found: {min(finders)}")
-# else:
-#   print("Did not find any producers")
+registers['A'] = 0
+registers['B'] = 0
+registers['C'] = 0
+
+run(registers, program, False)
