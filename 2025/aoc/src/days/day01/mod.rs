@@ -22,7 +22,6 @@ impl Dial {
             m *= -1;
         }
         self.pos = self.pos + (m * t.dist);
-        println!("{0} rotated from {prev} to {1}", t.raw, self.pos);
     }
 }
 
@@ -69,7 +68,6 @@ fn multiples_of_100_between_two_numbers(s: i32, l: i32) -> i32 {
     if s >= l {
         panic!("l should always be bigger than s.");
     }
-    println!("{s}, {l}");
     let mut d = s;
     let mut i = 0;
     while l - d > 100 {
