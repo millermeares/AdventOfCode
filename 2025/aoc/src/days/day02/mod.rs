@@ -13,11 +13,11 @@ struct Range {
 impl Range {
     fn get_invalid(&self, max_copies: i32) -> HashSet<String> {
         let mut invalids: HashSet<String> = HashSet::new();
-        let first_possible_start = first_half(&self.begin, true);
+        let first_possible_start = self.first_possible(max_copies);
+        let fh: String = first_half(&self.begin, true);
         let last_possible_start = first_half(&self.end, false);
         let b = &self.begin;
         let e = &self.end;
-        println!("{b},{e}: {first_possible_start},{last_possible_start}"); 
         let first_possible_start_num = first_possible_start.parse::<i64>().unwrap();
         let last_possible_start_num = last_possible_start.parse::<i64>().unwrap();
         let mut cur = first_possible_start_num;
@@ -47,8 +47,19 @@ impl Range {
         return self.num_in_range(i);
     }
 
-    fn first_possible(max_copies: i32) -> String {
-        "".to_string()
+    fn first_possible(&self, max_copies: i32) -> String {
+        // x * max_copies <= self.begin.len()
+        // x = self.begin.len() / max_copies
+        if self.begin.len() == 1 {
+            return "0".to_string();
+        }
+        let desired_len: usize = self.begin.len() / (max_copies as usize);
+        let s = &self.begin;
+        let h = s[..desired_len].to_string();
+        if h.is_empty() {
+            return "0".to_string();
+        }
+        h
     }
 }
 
@@ -73,7 +84,6 @@ impl Day for Day02 {
         let ranges = parse_ranges(input.trim().to_string());
         for range in ranges {
             let invalids = range.get_invalid(2);
-            println!("{:?}", invalids);
             let nums = invalids.iter().map(|s| {
                 s.parse::<i64>().unwrap()
             });
@@ -123,6 +133,24 @@ mod test {
         assert_eq!(446446, d.solve_1("446443-446449".to_owned()));
         assert_eq!(38593859, d.solve_1("38593856-38593862".to_owned()));
     }
+
+    #[test]
+    fn test_example_2() {
+        let d = Day02{};
+        assert_eq!(33, d.solve_2("11-22".to_owned()));
+        assert_eq!(210, d.solve_2("95-115".to_owned()));
+        assert_eq!(2009, d.solve_2("998-1012".to_owned()));
+        assert_eq!(1188511885, d.solve_2("1188511880-1188511890".to_owned()));
+        assert_eq!(222222, d.solve_2("222220-222224".to_owned()));
+        assert_eq!(0, d.solve_2("1698522-1698528".to_owned()));
+        assert_eq!(446446, d.solve_2("446443-446449".to_owned()));
+        assert_eq!(38593859, d.solve_2("38593856-38593862".to_owned()));
+        assert_eq!(565656, d.solve_2("565653-565659".to_owned()));
+        assert_eq!(824824824, d.solve_2("824824821-824824827".to_owned()));
+        assert_eq!(2121212121, d.solve_2("2121212118-2121212124".to_owned()));
+    }
+
+
 
     #[test]
     fn first_half_test() {
