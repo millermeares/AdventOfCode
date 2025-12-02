@@ -7,6 +7,18 @@ use crate::days::day02::Day02;
 
 pub mod days;
 
+macro_rules! timed {
+    ($label:literal, $expr:expr) => {{
+        let t = std::time::Instant::now();
+        let result = $expr;
+        let dt = t.elapsed();
+        println!();
+        println!("{}: {}  (took {:?})", $label, result, dt);
+        result
+    }};
+}
+
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -14,23 +26,11 @@ fn main() {
     println!("Day: {day_arg}");
 
     let day = choose_day(day_arg.parse::<i32>().unwrap());
-
-    let s_answer = day.solve_sample_1();
-    println!();
-    println!("Part 1 Sample: {s_answer}");
-    println!();
-    let real_answer = day.solve_real_1();
-    println!();
-    println!("Part 1 Real: {real_answer}");
-    println!();
-    let s_answer_2 = day.solve_sample_2();
-    println!();
-    println!("Part 2 Sample: {s_answer_2}");
-    println!();
-    let real_answer_2 = day.solve_real_2();
-    println!();
-    println!("Part 2 Real: {real_answer_2}");
-    println!();
+    timed!("Part 1 Sample", day.solve_sample_1());
+    timed!("Part 1 Real", day.solve_real_1());
+    
+    timed!("Part 2 Sample", day.solve_sample_2());
+    timed!("Part 2 Real", day.solve_real_2());
 }
 
 fn choose_day(d: i32) -> Box<dyn Day> {
@@ -40,3 +40,4 @@ fn choose_day(d: i32) -> Box<dyn Day> {
         _ => panic!("Could not find day for {d}"),
     }
 }
+
