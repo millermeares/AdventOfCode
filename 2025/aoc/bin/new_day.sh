@@ -11,7 +11,7 @@ DAY_DIR="src/days/day$DAY"
 # Create day directory and files
 mkdir -p "$DAY_DIR"
 touch "$DAY_DIR/input.txt"
-touch "$DAY_DIR/solve.txt"
+touch "$DAY_DIR/sample.txt"
 
 # Create mod.rs
 cat > "$DAY_DIR/mod.rs" << EOF

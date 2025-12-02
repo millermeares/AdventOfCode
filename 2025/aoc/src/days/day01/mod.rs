@@ -1,5 +1,3 @@
-use std::ops::Div;
-
 use crate::Day;
 
 pub struct Day01 {}

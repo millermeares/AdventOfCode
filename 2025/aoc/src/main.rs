@@ -8,9 +8,7 @@ use crate::days::day02::Day02;
 pub mod days;
 
 fn main() {
-    println!("Hello, world!");
     let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
 
     let day_arg = &args[1];
     println!("Day: {day_arg}");
