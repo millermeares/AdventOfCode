@@ -20,11 +20,11 @@ use crate::Day;
 pub struct Day$DAY {}
 
 impl Day for Day$DAY {
-    fn solve_1(&self, input: String) -> i32 {
+    fn solve_1(&self, input: String) -> i64 {
         todo!()
     }
 
-    fn solve_2(&self, input: String) -> i32 {
+    fn solve_2(&self, input: String) -> i64 {
         todo!()
     }
 }

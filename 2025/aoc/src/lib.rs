@@ -3,25 +3,25 @@ use std::{any::type_name, env, fs::File, io::Read};
 mod days;
 
 pub trait Day {
-    fn solve_1(&self, input: String) -> i32;
-    fn solve_2(&self, input: String) -> i32;
+    fn solve_1(&self, input: String) -> i64;
+    fn solve_2(&self, input: String) -> i64;
 
-    fn solve_sample_1(&self) -> i32 {
+    fn solve_sample_1(&self) -> i64 {
         let sample_input = get_input(self.get_day(), "sample");
         return self.solve_1(sample_input);
     }
 
-    fn solve_real_1(&self) -> i32 {
+    fn solve_real_1(&self) -> i64 {
         let real_input: String = get_input(self.get_day(), "input");
         return self.solve_1(real_input);
     }
 
-    fn solve_sample_2(&self) -> i32 {
+    fn solve_sample_2(&self) -> i64 {
         let sample_input = get_input(self.get_day(), "sample");
         return self.solve_2(sample_input);
     }
 
-    fn solve_real_2(&self) -> i32 {
+    fn solve_real_2(&self) -> i64 {
         let real_input: String = get_input(self.get_day(), "input");
         return self.solve_2(real_input);
     }

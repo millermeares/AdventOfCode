@@ -2,12 +2,111 @@ use crate::Day;
 
 pub struct Day02 {}
 
-impl Day for Day02 {
-    fn solve_1(&self, input: String) -> i32 {
-        todo!()
+// ranges are inclusive on both sides. 
+struct Range {
+    begin: String,
+    end: String
+}
+
+impl Range {
+    fn get_invalid(&self) -> Vec<String> {
+        let mut invalids: Vec<String> = vec![];
+        let first_possible_start = first_half(&self.begin, true);
+        let last_possible_start = first_half(&self.end, false);
+        let b = &self.begin;
+        let e = &self.end;
+        println!("{b},{e}: {first_possible_start},{last_possible_start}");
+        let first_possible_start_num = first_possible_start.parse::<i64>().unwrap();
+        let last_possible_start_num = last_possible_start.parse::<i64>().unwrap();
+        let mut cur = first_possible_start_num;
+        while cur <= last_possible_start_num {
+            let num: String = format!("{cur}{cur}");
+            if self.str_in_range(&num) {
+                invalids.push(num);
+            }
+            cur += 1;
+        }
+        invalids
     }
 
-    fn solve_2(&self, input: String) -> i32 {
+    fn num_in_range(&self, i: i64) -> bool {
+        let snum = self.begin.parse::<i64>().unwrap();
+        let endnum = self.end.parse::<i64>().unwrap();
+        return i >= snum && i <= endnum
+    }
+
+    fn str_in_range(&self, s: &String) -> bool {
+        let i = s.parse::<i64>().unwrap();
+        return self.num_in_range(i);
+    }
+}
+
+fn first_half(s: &String, trunc_left: bool) -> String {
+    if s.len() == 1 {
+        return "0".to_string()
+    }
+    let mut d = 0;
+    if !trunc_left {
+        d = 1;
+    }
+    s[..(s.len() / 2) + d].to_string()
+}
+
+
+impl Day for Day02 {
+    fn solve_1(&self, input: String) -> i64 {
+        let mut sum = 0;
+        let ranges = parse_ranges(input.trim().to_string());
+        for range in ranges {
+            let invalids = range.get_invalid();
+            let nums = invalids.iter().map(|s| {
+                s.parse::<i64>().unwrap()
+            });
+            sum += nums.sum::<i64>();
+        }
+        sum
+    }
+
+    fn solve_2(&self, input: String) -> i64 {
         todo!()
+    }
+}
+
+fn parse_ranges(input: String) -> Vec<Range> {
+    let mut ranges: Vec<Range> = vec![];
+    let spl = input.split(",");
+    spl.for_each(|r| {
+        let mut be = r.split("-");
+        let start = be.next().unwrap();
+        let end = be.next().unwrap();
+        ranges.push(Range { begin: start.to_string(), end: end.to_string() })
+    });
+    ranges
+}
+
+mod test {
+    use crate::{Day, days::day02::{Day02, first_half}};
+
+    #[test]
+    fn test_example_1() {
+        let d = Day02{};
+        assert_eq!(33, d.solve_1("11-22".to_owned()));
+        assert_eq!(99, d.solve_1("95-115".to_owned()));
+        assert_eq!(1010, d.solve_1("998-1012".to_owned()));
+        assert_eq!(1188511885, d.solve_1("1188511880-1188511890".to_owned()));
+        assert_eq!(222222, d.solve_1("222220-222224".to_owned()));
+        assert_eq!(0, d.solve_1("1698522-1698528".to_owned()));
+        assert_eq!(446446, d.solve_1("446443-446449".to_owned()));
+        assert_eq!(38593859, d.solve_1("38593856-38593862".to_owned()));
+    }
+
+    #[test]
+    fn first_half_test() {
+        let f = first_half(&"abcd".to_string(), true);
+        assert_eq!("ab", f);
+        let b = first_half(&"abcde".to_string(), true);
+        assert_eq!("ab", b);
+        let c = first_half(&"abcde".to_string(), false);
+        assert_eq!("abc", c);
     }
 }

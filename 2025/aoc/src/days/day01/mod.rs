@@ -14,7 +14,6 @@ struct Dial {
 
 impl Dial {
     fn apply(&mut self, t: &Turn) {
-        let prev = self.pos;
         let mut m: i32 = 1;
         if t.l {
             m *= -1;
@@ -24,7 +23,7 @@ impl Dial {
 }
 
 impl Day for Day01 {
-    fn solve_1(&self, input: String) -> i32 {
+    fn solve_1(&self, input: String) -> i64 {
         let mut at_zero = 0;
         let turns = parse_turns(input);
         let mut dial = Dial { pos: 50 };
@@ -37,8 +36,8 @@ impl Day for Day01 {
         at_zero
     }
 
-    fn solve_2(&self, input: String) -> i32 {
-        let mut crossed_zero = 0;
+    fn solve_2(&self, input: String) -> i64 {
+        let mut crossed_zero: i64 = 0;
         let turns = parse_turns(input);
         let mut dial = Dial { pos: 50 };
         for turn in turns {
@@ -46,12 +45,12 @@ impl Day for Day01 {
             dial.apply(&turn);
             let new = dial.pos;
             // if turn was left, the smaller number is 'new'. 
-            let amt: i32 = if turn.l {
+            let amt: i64 = if turn.l {
                 // multiply by negative one due to the `multiples_of_100_between_two_numbers` only being inclusive on the larger side. 
                 // this works around a deficiency on the `multiples_of_100_between_two_numbers` not counting correctly when turning left.
                 multiples_of_100_between_two_numbers(prev * -1, new * -1)
             } else {
-                 multiples_of_100_between_two_numbers(prev, new)
+                multiples_of_100_between_two_numbers(prev, new)
             };
             crossed_zero += amt;
         }
@@ -62,7 +61,7 @@ impl Day for Day01 {
 /*
  * Counts multiples of 100. Only inclusive on the 'l' side.
  */
-fn multiples_of_100_between_two_numbers(s: i32, l: i32) -> i32 {
+fn multiples_of_100_between_two_numbers(s: i32, l: i32) -> i64 {
     if s >= l {
         panic!("l should always be bigger than s.");
     }
