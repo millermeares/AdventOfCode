@@ -2,6 +2,7 @@ use aoc::Day;
 use std::env;
 
 use crate::days::day01::Day01;
+use crate::days::day02::Day02;
 
 
 pub mod days;
@@ -31,6 +32,7 @@ fn main() {
 fn choose_day(d: i32) -> Box<dyn Day> {
     match d {
         1 => Box::new(Day01 {}),
+        2 => Box::new(Day02 {}),
         _ => panic!("Could not find day for {d}"),
     }
 }
