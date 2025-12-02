@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::Day;
 
 pub struct Day02 {}
@@ -9,20 +11,25 @@ struct Range {
 }
 
 impl Range {
-    fn get_invalid(&self) -> Vec<String> {
-        let mut invalids: Vec<String> = vec![];
+    fn get_invalid(&self, max_copies: i32) -> HashSet<String> {
+        let mut invalids: HashSet<String> = HashSet::new();
         let first_possible_start = first_half(&self.begin, true);
         let last_possible_start = first_half(&self.end, false);
         let b = &self.begin;
         let e = &self.end;
-        println!("{b},{e}: {first_possible_start},{last_possible_start}");
+        println!("{b},{e}: {first_possible_start},{last_possible_start}"); 
         let first_possible_start_num = first_possible_start.parse::<i64>().unwrap();
         let last_possible_start_num = last_possible_start.parse::<i64>().unwrap();
         let mut cur = first_possible_start_num;
         while cur <= last_possible_start_num {
-            let num: String = format!("{cur}{cur}");
-            if self.str_in_range(&num) {
-                invalids.push(num);
+            let mut num = format!("{cur}");
+            let mut copies = 1;
+            while &num.len() <= &self.end.len() && copies < max_copies {
+                num = format!("{num}{cur}");
+                copies += 1;
+                if !invalids.contains(&num) && self.str_in_range(&num) {
+                    invalids.insert(num.to_string());
+                }
             }
             cur += 1;
         }
@@ -39,7 +46,14 @@ impl Range {
         let i = s.parse::<i64>().unwrap();
         return self.num_in_range(i);
     }
+
+    fn first_possible(max_copies: i32) -> String {
+        "".to_string()
+    }
 }
+
+
+
 
 fn first_half(s: &String, trunc_left: bool) -> String {
     if s.len() == 1 {
@@ -58,7 +72,8 @@ impl Day for Day02 {
         let mut sum = 0;
         let ranges = parse_ranges(input.trim().to_string());
         for range in ranges {
-            let invalids = range.get_invalid();
+            let invalids = range.get_invalid(2);
+            println!("{:?}", invalids);
             let nums = invalids.iter().map(|s| {
                 s.parse::<i64>().unwrap()
             });
@@ -68,7 +83,16 @@ impl Day for Day02 {
     }
 
     fn solve_2(&self, input: String) -> i64 {
-        todo!()
+        let mut sum = 0;
+        let ranges = parse_ranges(input.trim().to_string());
+        for range in ranges {
+            let invalids = range.get_invalid(range.end.len().try_into().unwrap());
+            let nums = invalids.iter().map(|s: &String| {
+                s.parse::<i64>().unwrap()
+            });
+            sum += nums.sum::<i64>();
+        }
+        sum
     }
 }
 
