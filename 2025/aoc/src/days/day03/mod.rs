@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cmp::max, collections::HashMap};
 
 use crate::{Day, timed};
 
@@ -10,22 +10,17 @@ struct Bank {
 
 impl Bank {
     fn max_joltage(&self, start_idx: usize, nums_to_choose: usize, memo: &mut HashMap<String, i64>) -> i64 {
-        if nums_to_choose == 0 {
-            panic!("cannot choose zero numbers");
+        if nums_to_choose == 1 {
+            return self.batteries[start_idx..].iter().max().unwrap().to_owned() as i64
         }
         let memo_key = format!("{start_idx}-{nums_to_choose}").to_string();
         if memo.contains_key(&memo_key) {
             return memo[&memo_key]
         }
 
-        // find two largest numbers in my batteries array. 
         let mut max_num = 0;
         for i in start_idx..self.batteries.len()-nums_to_choose+1 {
-            let max_rest_if_chosen: String = if nums_to_choose > 1 {
-                self.max_joltage(i+1, nums_to_choose-1, memo).to_string()
-            } else {
-                "".to_string()
-            };
+            let max_rest_if_chosen = self.max_joltage(i+1, nums_to_choose-1, memo).to_string();
             let num= self.batteries.get(i).unwrap();
             let num_if_chosen = format!("{num}{max_rest_if_chosen}").parse::<i64>().unwrap();
             if num_if_chosen > max_num {
