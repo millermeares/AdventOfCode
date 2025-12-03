@@ -1,3 +1,4 @@
+use core::num;
 use std::{cmp::max, collections::HashMap};
 
 use crate::{Day, timed};
@@ -9,27 +10,20 @@ struct Bank {
 }
 
 impl Bank {
-    fn max_joltage(&self, start_idx: usize, nums_to_choose: usize, memo: &mut HashMap<String, i64>) -> i64 {
+    fn max_joltage(&self, start_idx: usize, nums_to_choose: usize) -> i64 {
         if nums_to_choose == 1 {
             return self.batteries[start_idx..].iter().max().unwrap().to_owned() as i64
         }
-        let memo_key = format!("{start_idx}-{nums_to_choose}").to_string();
-        if memo.contains_key(&memo_key) {
-            return memo[&memo_key]
-        }
 
-        let mut max_num = 0;
-        for i in start_idx..self.batteries.len()-nums_to_choose+1 {
-            let max_rest_if_chosen = self.max_joltage(i+1, nums_to_choose-1, memo).to_string();
-            let num= self.batteries.get(i).unwrap();
-            let num_if_chosen = format!("{num}{max_rest_if_chosen}").parse::<i64>().unwrap();
-            if num_if_chosen > max_num {
-                max_num = num_if_chosen
+        let mut first_idx_of_max = start_idx;
+        for i in start_idx..self.batteries.len() - nums_to_choose+1 {
+            if self.batteries.get(i).unwrap() > self.batteries.get(first_idx_of_max).unwrap() {
+                first_idx_of_max = i;
             }
         }
-        let v = max_num as i64;
-        memo.insert(memo_key.to_string(), v.clone());
-        memo[&memo_key]
+        let rest = self.max_joltage(first_idx_of_max+1, nums_to_choose-1).to_string();
+        let s = self.batteries.get(first_idx_of_max).unwrap();
+        return format!("{s}{rest}").parse::<i64>().unwrap();
     }
 }
 
@@ -37,14 +31,14 @@ impl Day for Day03 {
     fn solve_1(&self, input: String) -> i64 {
         let banks = parse_banks(input);
         let mut max_joltage = 0;
-        banks.iter().for_each(|b| max_joltage += b.max_joltage(0, 2, &mut HashMap::new()));
+        banks.iter().for_each(|b| max_joltage += b.max_joltage(0, 2));
         max_joltage
     }
 
     fn solve_2(&self, input: String) -> i64 {
         let banks = parse_banks(input);
         let mut max_joltage = 0;
-        banks.iter().for_each(|b| max_joltage += timed!("Max joltage calculation", b.max_joltage(0, 12, &mut HashMap::new())));
+        banks.iter().for_each(|b| max_joltage += timed!("Max joltage calculation", b.max_joltage(0, 12)));
         max_joltage
     }
 }
