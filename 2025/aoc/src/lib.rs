@@ -8,9 +8,8 @@ macro_rules! timed {
         let t = std::time::Instant::now();
         let result = $expr;
         let dt = t.elapsed();
-        println!("{}: took {:?}", $label, dt);
         println!();
-
+        println!("{}: {:?}  (took {:?})", $label, result, dt);
         result
     }};
 }

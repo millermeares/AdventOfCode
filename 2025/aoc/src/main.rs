@@ -3,6 +3,7 @@ use std::env;
 
 use crate::days::day01::Day01;
 use crate::days::day02::Day02;
+use crate::days::day03::Day03;
 
 
 pub mod days;
@@ -26,6 +27,7 @@ fn choose_day(d: i32) -> Box<dyn Day> {
     match d {
         1 => Box::new(Day01 {}),
         2 => Box::new(Day02 {}),
+        3 => Box::new(Day03 {}),
         _ => panic!("Could not find day for {d}"),
     }
 }
