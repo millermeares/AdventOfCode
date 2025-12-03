@@ -1,4 +1,4 @@
-use aoc::Day;
+use aoc::{Day, timed};
 use std::env;
 
 use crate::days::day01::Day01;
@@ -6,17 +6,6 @@ use crate::days::day02::Day02;
 
 
 pub mod days;
-
-macro_rules! timed {
-    ($label:literal, $expr:expr) => {{
-        let t = std::time::Instant::now();
-        let result = $expr;
-        let dt = t.elapsed();
-        println!();
-        println!("{}: {}  (took {:?})", $label, result, dt);
-        result
-    }};
-}
 
 
 fn main() {

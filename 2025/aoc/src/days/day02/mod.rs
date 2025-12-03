@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use crate::Day;
+use crate::timed;
 
 pub struct Day02 {}
 
@@ -12,16 +13,17 @@ struct Range {
 
 impl Range {
     fn get_invalid(&self, max_copies: i32) -> HashSet<String> {
+        let mut search_count = 0;
         let mut invalids: HashSet<String> = HashSet::new();
         let first_possible_start = self.first_possible(max_copies);
-        let fh: String = first_half(&self.begin, true);
         let last_possible_start = first_half(&self.end, false);
-        let b = &self.begin;
-        let e = &self.end;
         let first_possible_start_num = first_possible_start.parse::<i64>().unwrap();
         let last_possible_start_num = last_possible_start.parse::<i64>().unwrap();
         let mut cur = first_possible_start_num;
+        // the perf bottleneck here is 'cur'. cur is basically brute force searching all possibilites. 
+        // could maybe be smarter by looking at 'end' earlier.
         while cur <= last_possible_start_num {
+            search_count += 1;
             let mut num = format!("{cur}");
             let mut copies = 1;
             while &num.len() <= &self.end.len() && copies < max_copies {
@@ -33,6 +35,9 @@ impl Range {
             }
             cur += 1;
         }
+        let b = self.begin.to_string();
+        let e = self.end.to_string();
+        println!("Search count: {search_count} for {b},{e}");
         invalids
     }
 
@@ -96,7 +101,7 @@ impl Day for Day02 {
         let mut sum = 0;
         let ranges = parse_ranges(input.trim().to_string());
         for range in ranges {
-            let invalids = range.get_invalid(range.end.len().try_into().unwrap());
+            let invalids = timed!("Range time", range.get_invalid(range.end.len().try_into().unwrap()));
             let nums = invalids.iter().map(|s: &String| {
                 s.parse::<i64>().unwrap()
             });

@@ -2,6 +2,20 @@ use std::{any::type_name, env, fs::File, io::Read};
 
 mod days;
 
+#[macro_export]
+macro_rules! timed {
+    ($label:literal, $expr:expr) => {{
+        let t = std::time::Instant::now();
+        let result = $expr;
+        let dt = t.elapsed();
+        println!("{}: took {:?}", $label, dt);
+        println!();
+
+        result
+    }};
+}
+
+
 pub trait Day {
     fn solve_1(&self, input: String) -> i64;
     fn solve_2(&self, input: String) -> i64;
