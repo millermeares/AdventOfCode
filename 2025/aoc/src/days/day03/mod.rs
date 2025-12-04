@@ -1,6 +1,3 @@
-use core::num;
-use std::{cmp::max, collections::HashMap};
-
 use crate::{Day, timed};
 
 pub struct Day03 {}
