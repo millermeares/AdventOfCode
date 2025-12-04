@@ -1,79 +1,89 @@
+use std::collections::VecDeque;
+
 use crate::Day;
 
 pub struct Day04 {}
 
 fn count_adjaciencies(grid: &Vec<Vec<char>>, px: usize, py: usize) -> i32 {
+    box_neighbors(grid, px, py).len() as i32
+}
+
+fn is_accessible(grid: &Vec<Vec<char>>, px: usize, py: usize) -> bool {
+    return count_adjaciencies(grid, px, py) < 4
+} 
+
+fn box_neighbors(grid: &Vec<Vec<char>>, px: usize, py: usize) -> Vec<(usize, usize)> {
+    let mut neighbors: Vec<(usize, usize)> = vec![];
     let xmoves: Vec<i32> = vec![-1, 0, 1];
     let ymoves: Vec<i32> = vec![-1, 0, 1];
-
-    let mut adj = 0;
     for my in ymoves {
         for mx in &xmoves {
+            // is self
             if my == 0 && *mx == 0 {
                 continue
             }
 
             let x: i32 = px as i32 + mx;
             let y: i32 = py as i32 + my;
+            // is out of grid.
             if x < 0 || y < 0 || y as usize >= grid.len() || x as usize >= grid.get(y as usize).unwrap().len() {
                 continue
             }
-            let c = grid.get(y as usize).unwrap()[x as usize];
-            if c == '@' {
-                adj += 1;
+            // is not box
+            if grid[y as usize][x as usize] == '@' {
+                neighbors.push((x as usize, y as usize));
             }
         }
     }
-    adj
+    neighbors
 }
 
-fn count_of_accessible(grid: &Vec<Vec<char>>) -> i64 {
-    let mut accessible: i32 = 0;
+fn get_accessibles(grid: &Vec<Vec<char>>) -> Vec<(usize, usize)> {
+    let mut accessibles= vec![];
     for y in 0..grid.len() {
         let row = &grid.get(y).unwrap();
         for x in 0..row.len() {
             let c = row[x];
             if c == '@' {
-                let adj = count_adjaciencies(&grid, x, y);
-                if adj < 4 {
-                    accessible += 1;
+                if is_accessible(grid, x, y) {
+                    accessibles.push((x, y));
                 }
             }
         }
     }
-    accessible as i64
-}
-
-fn remove_accessibles(grid: &mut Vec<Vec<char>>) -> i64 {
-    let mut removed = 0;
-    for y in 0..grid.len() {
-        for x in 0..grid[y].len() {
-            if grid[y][x] == '@' {
-                let adj = count_adjaciencies(&grid, x, y);
-                if adj < 4 {
-                    removed += 1;
-                    grid[y][x] = '.';
-                }
-            }
-        }
-    }
-    removed
+    accessibles
 }
 
 impl Day for Day04 {
     fn solve_1(&self, input: String) -> i64 {
         let grid: Vec<Vec<char>> = input.split("\n").map(|v| v.to_string().chars().collect()).collect();
-        return count_of_accessible(&grid)
+        return get_accessibles(&grid).len() as i64
     }
 
 
     // this is brute force. the optimal solution is some sort of queue. i'll do that next.
     fn solve_2(&self, input: String) -> i64 {
         let mut accessible_removed = 0;
-        let grid: &mut Vec<Vec<char>> = &mut input.split("\n").map(|v| v.to_string().chars().collect()).collect();
-        while count_of_accessible(&grid) > 0 {
-            accessible_removed += remove_accessibles(grid);
+        let grid: &mut Vec<Vec<char>> = &mut input.split("\n").map(|v: &str| v.to_string().chars().collect()).collect();
+        
+        let mut queue: VecDeque<(usize, usize)> = VecDeque::new();
+        let accessibles = get_accessibles(&grid);
+        for accessible in accessibles {
+            queue.push_back(accessible);
         }
-        accessible_removed
+        while queue.len() > 0 {
+            let (nx, ny) = queue.pop_front().unwrap();
+            if grid[ny][nx] == '@' && is_accessible(grid, nx, ny) {
+                // remove box and increment count.
+                accessible_removed += 1;
+                grid[ny][nx] = '.';
+                // enqueue neighbors who have had their box numbers change.
+                let neighbors = box_neighbors(grid, nx, ny);
+                for neigh in neighbors {
+                    queue.push_back(neigh);
+                }
+            }
+        }
+        accessible_removed as i64
     }
 }
