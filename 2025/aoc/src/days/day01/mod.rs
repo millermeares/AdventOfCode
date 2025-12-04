@@ -5,7 +5,6 @@ pub struct Day01 {}
 struct Turn {
     l: bool,
     dist: i32,
-    raw: String
 }
 
 struct Dial {
@@ -90,14 +89,14 @@ fn parse_turns(input: String) -> Vec<Turn> {
         // println!("{}", t[1..]);
         turns.push(Turn {
             l: (t.starts_with("L")),
-            dist: t[1..].parse::<i32>().unwrap(),
-            raw: t.to_string()
+            dist: t[1..].parse::<i32>().unwrap()
         })
     });
     turns
 }
 
 mod test {
+    #[allow(unused_imports)]
     use crate::days::day01::multiples_of_100_between_two_numbers;
 
     #[test]

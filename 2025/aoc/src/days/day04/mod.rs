@@ -61,7 +61,6 @@ impl Day for Day04 {
     }
 
 
-    // this is brute force. the optimal solution is some sort of queue. i'll do that next.
     fn solve_2(&self, input: String) -> i64 {
         let mut accessible_removed = 0;
         let grid: &mut Vec<Vec<char>> = &mut input.split("\n").map(|v: &str| v.to_string().chars().collect()).collect();

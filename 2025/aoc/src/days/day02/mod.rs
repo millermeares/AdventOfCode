@@ -124,6 +124,7 @@ fn parse_ranges(input: String) -> Vec<Range> {
 }
 
 mod test {
+    #[allow(unused_imports)]
     use crate::{Day, days::day02::{Day02, first_half}};
 
     #[test]

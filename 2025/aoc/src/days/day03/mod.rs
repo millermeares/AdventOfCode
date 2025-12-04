@@ -52,6 +52,7 @@ fn parse_banks(input: String) -> Vec<Bank> {
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use crate::{Day, days::day03::Day03};
 
     #[test]
