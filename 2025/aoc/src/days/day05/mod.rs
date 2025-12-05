@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::Day;
 
 pub struct Day05 {}
@@ -7,9 +9,50 @@ struct Range {
     max: i64
 }
 
+impl Eq for Range {
+
+}
+
+impl PartialEq for Range {
+    fn eq(&self, other: &Self) -> bool {
+        self.min == other.min && self.max == other.max
+    }
+}
+
+impl PartialOrd for Range {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        return Some(self.cmp(other))
+    }
+}
+
+impl Ord for Range {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.min == other.min {
+            return self.max.cmp(&other.max);
+        }
+        return self.min.cmp(&other.min)
+    }
+}
+
 impl Range {
     fn in_range(&self, v: i64) -> bool {
         return v >= self.min && v <= self.max
+    }
+
+    fn overlaps(&self, other: &Range) -> bool {
+        self.max >= other.min
+    }
+
+    fn combine(&self, other: &Range) -> Range {
+        if !self.overlaps(other) {
+            panic!("cannot combine ranges which do not overlap")
+        }
+        // take the min and the max
+        let mins = vec![self.min, other.min];
+        let min = mins.iter().min().unwrap();
+        let maxs = vec![self.max, other.max];
+        let max = maxs.iter().max().unwrap();
+        return Range { min: *min, max: *max }
     }
 }
 
@@ -20,6 +63,31 @@ fn ingredient_in_a_range(ingredient: i64, ranges: &Vec<Range>) -> bool {
         }
     }
     return false
+}
+
+fn any_ranges_overlap(sorted_ranges: &Vec<Range>) -> bool {
+    for i in 0..sorted_ranges.len() - 1 {
+        if sorted_ranges[i].overlaps(&sorted_ranges[i+1]) {
+            return true
+        }
+    }
+    return false
+}
+
+// returns true if it combined something. false if it did not (because it did not find any).
+fn combine_first_overlapping(sorted_ranges: &mut Vec<Range>) -> bool {
+    for i in 0..sorted_ranges.len() - 1 {
+        if sorted_ranges[i].overlaps(&sorted_ranges[i+1]) {
+            let earlier = &sorted_ranges[i];
+            let later = &sorted_ranges[i+1];
+            let combined = earlier.combine(&later);
+            sorted_ranges.remove(i+1);
+            sorted_ranges.remove(i);
+            sorted_ranges.insert(i, combined);
+            return true
+        }
+    }
+    false
 }
 
 impl Day for Day05 {
@@ -35,36 +103,21 @@ impl Day for Day05 {
     }
 
     fn solve_2(&self, input: String) -> i64 {
-        let (ranges, _) = parse_input(input);
-        let (min, max) = get_min_max_of_ranges(&ranges);
-        println!("{min}-{max}");
-        let mut fresh = 0;
-
-        // ok here is my idea. sort by minimum. merge all ranges that are overlapping. 
-        // if there are no overlapping ranges, then just add up all of the numbers.
-        for ingredient in min..max+1 {
-            if ingredient % 1000000 == 0 {
-                println!("million: {ingredient}");
-            }
-            if ingredient % 1000000000 == 0 {
-                println!("billion: {ingredient}");
-            }
-            if ingredient % 1000000000000 == 0 {
-                println!("trillion: {ingredient}");
-            }
-            if ingredient_in_a_range(ingredient, &ranges) {
-                fresh += 1
-            }   
+        let (mut ranges, _) = parse_input(input);
+        ranges.sort();
+        println!("before combining range count: {}", ranges.len());
+        while combine_first_overlapping(&mut ranges) {
+            // some combination happened which maybe could have messed up the sorting.
+            ranges.sort();
         }
-        fresh as i64
+        println!("after combining range count: {}", ranges.len());
+
+        let mut fresh = 0;
+        for range in ranges {
+            fresh += (range.max+1-range.min)
+        }
+        fresh
     }
-}
-
-fn get_min_max_of_ranges(ranges: &Vec<Range>) -> (i64, i64) {
-    let mins = ranges.iter().map(|f| f.min);
-    let maxs = ranges.iter().map(|f| f.max);
-    return (mins.min().unwrap(), maxs.max().unwrap())
-
 }
 
 fn parse_input(input: String) -> (Vec<Range>, Vec<i64>){
