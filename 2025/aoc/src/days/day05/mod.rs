@@ -4,25 +4,16 @@ use crate::Day;
 
 pub struct Day05 {}
 
+#[derive(Eq, PartialEq)]
 struct Range {
     min: i64,
     max: i64
 }
 
-impl Eq for Range {
-
-}
-
-impl PartialEq for Range {
-    fn eq(&self, other: &Self) -> bool {
-        self.min == other.min && self.max == other.max
-    }
-}
-
-impl PartialOrd for Range {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        return Some(self.cmp(other))
-    }
+impl PartialOrd for Range { 
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> { 
+        return Some(self.cmp(other)) 
+    } 
 }
 
 impl Ord for Range {
@@ -47,12 +38,7 @@ impl Range {
         if !self.overlaps(other) {
             panic!("cannot combine ranges which do not overlap")
         }
-        // take the min and the max
-        let mins = vec![self.min, other.min];
-        let min = mins.iter().min().unwrap();
-        let maxs = vec![self.max, other.max];
-        let max = maxs.iter().max().unwrap();
-        return Range { min: *min, max: *max }
+        return Range { min: self.min.min(other.min), max: self.max.max(other.max)}
     }
 }
 
