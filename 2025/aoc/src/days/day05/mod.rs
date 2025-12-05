@@ -65,16 +65,7 @@ fn ingredient_in_a_range(ingredient: i64, ranges: &Vec<Range>) -> bool {
     return false
 }
 
-fn any_ranges_overlap(sorted_ranges: &Vec<Range>) -> bool {
-    for i in 0..sorted_ranges.len() - 1 {
-        if sorted_ranges[i].overlaps(&sorted_ranges[i+1]) {
-            return true
-        }
-    }
-    return false
-}
-
-// returns true if it combined something. false if it did not (because it did not find any).
+// returns false if no overlapping ranges were found.
 fn combine_first_overlapping(sorted_ranges: &mut Vec<Range>) -> bool {
     for i in 0..sorted_ranges.len() - 1 {
         if sorted_ranges[i].overlaps(&sorted_ranges[i+1]) {
@@ -114,7 +105,7 @@ impl Day for Day05 {
 
         let mut fresh = 0;
         for range in ranges {
-            fresh += (range.max+1-range.min)
+            fresh += range.max+1-range.min
         }
         fresh
     }
