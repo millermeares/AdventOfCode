@@ -1,5 +1,3 @@
-use std::io::Lines;
-
 use crate::Day;
 
 struct Operation {
