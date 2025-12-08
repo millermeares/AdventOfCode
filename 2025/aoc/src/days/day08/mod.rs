@@ -17,8 +17,6 @@ impl Day for Day08 {
             let p2 = &pop_change(&mut unconnected_distances, p1);
             pop_change(&mut unconnected_distances, p2);
 
-            println!("Shortest is {} to {}", p1.as_str(), p2.as_str());
-
             // second, identify which circuits these points are in.
             let c1 = get_index_of_circuit(p1, &circuits);
             let c2 = get_index_of_circuit(p2, &circuits);
@@ -52,8 +50,6 @@ impl Day for Day08 {
             pop_change(&mut unconnected_distances, p2);
             last_x_1 = p1.x;
             last_x_2 = p2.x;
-
-            println!("Shortest is {} to {}", p1.as_str(), p2.as_str());
 
             // second, identify which circuits these points are in.
             let c1 = get_index_of_circuit(p1, &circuits);
@@ -163,7 +159,7 @@ impl <'a> SortedDistanceList<'a> {
     }
 
     fn insert(&mut self, source: &'a Point3d, other: &'a Point3d) {
-        let to_insert = self.get_index_to_insert(source, other);
+        let to_insert = self.get_index_to_insert(source, other, 0, self.points.len());
         self.points.insert(to_insert, other);
     }
 
@@ -172,17 +168,20 @@ impl <'a> SortedDistanceList<'a> {
     }
 
     // just linear. could binary if u want
-    fn get_index_to_insert(&self, source: &'a Point3d, other: &'a Point3d) -> usize {
+    fn get_index_to_insert(&self, source: &'a Point3d, other: &'a Point3d, min: usize, max: usize) -> usize {
         let dist = source.straight_line_distance(other);
-        for i in 0..self.points.len() {
-            let cur = self.points[i];
-            let cur_dist = source.straight_line_distance(cur);
-            // if dist is less than cur_dist, return.
-            if dist < cur_dist {
-                return i;
-            }
+        if min == max {
+            return min; // both 0 for example.
         }
-        return self.points.len();
+
+        let mid = (min + max) / 2;
+        let mid_dist = source.straight_line_distance(self.points[mid]);
+        if dist > mid_dist {
+            // greater. use mid_dist+1 as the min
+            return self.get_index_to_insert(source, other, mid+1, max)
+        } else {
+            return self.get_index_to_insert(source, other, min, mid)
+        }   
     }
 }
 
