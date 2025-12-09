@@ -56,6 +56,7 @@ impl Day for Day09 {
         // what if i make a grid. and then figure out all colored tiles with "can escape grid" with a visited set. i treat the lines like walls. 
         // to handle ability to squeeze out, i will multiply every point by 2. 
 
+        println!("Grid calculations completed.");
         let mut max_area: i64 = 0;
         for i in 0..red.len()-1 {
             let p = &red[i];
@@ -66,9 +67,10 @@ impl Day for Day09 {
                     max_area = p.area_rectangle(other)
                 }
             }
+            if i % 1000 == 0 {
+                println!("Progress being made. Start corner rows complete: {} out of {}", i+1, red.len()-1)
+            }
         }
-        let can_escape = point_can_escape(&Point{x: 6 ,y: 6}, &grid);
-        println!("{},{} can escape? {:?}", 6, 6, can_escape);
         max_area
     }
 }
@@ -87,6 +89,9 @@ fn compress_grid(grid: Vec<Vec<Option<bool>>>) -> Vec<Vec<bool>> {
             }
             row.push(grid[y][x].unwrap());
         }
+        if y % 1000 == 0 {
+            println!("Compression progress being made. rows complete: {} out of {}", y+1, grid.len()-1)
+        }
         comp.push(row);
     }
     comp
@@ -95,6 +100,9 @@ fn compress_grid(grid: Vec<Vec<Option<bool>>>) -> Vec<Vec<bool>> {
 // something is missing with 'visited'. 
 // return whether or not start can escape.
 fn fill_grid(start: &Point, grid: &mut Vec<Vec<Option<bool>>>, visited: &mut HashSet<Point>, lines: &Vec<Line>) -> bool {
+    if visited.len() % 100000 == 0 {
+        println!("Making progress! {} out of {} visited so far.", visited.len(), grid.len() as i64 * grid[0].len() as i64)
+    }
     if grid[start.y as usize][start.x as usize].is_some() {
         return grid[start.y as usize][start.x as usize].unwrap()
     }
@@ -129,9 +137,6 @@ fn fill_grid(start: &Point, grid: &mut Vec<Vec<Option<bool>>>, visited: &mut Has
     false
 }
 
-
-
-
 fn point_on_a_line(lines: &Vec<Line>, point: &Point) -> bool {
     for line in lines {
         if line.point_is_on_line(point) {
@@ -142,20 +147,29 @@ fn point_on_a_line(lines: &Vec<Line>, point: &Point) -> bool {
 }
 
 fn get_grid(points: &Vec<Point>) -> Vec<Vec<Option<bool>>>{
-    let mut grid: Vec<Vec<Option<bool>>> = vec![];
     let max_x = points.iter().map(|p| p.x).max().unwrap();
     let max_y = points.iter().map(|p| p.y).max().unwrap();
-    for y in 0..max_y+2 {
-        let mut row: Vec<Option<bool>> = vec![];
-        for x in 0..max_x+2 {
-            if x == 0 || x == max_x+1 || y == 0 || y == max_y+1 {
-                row.push(Some(true));
-            } else {
-                row.push(None);
-            }
+    let w = max_x  as usize + 2;
+    let h = max_y as usize + 2;
+
+    // Prebuild the top/bottom row and middle-row template
+    let top_or_bottom = vec![Some(true); w];
+
+    let mut middle = vec![None; w];
+    middle[0] = Some(true);
+    middle[w - 1] = Some(true);
+
+    let mut grid = Vec::with_capacity(h);
+
+    grid.push(top_or_bottom.clone());
+    for y in 1..h-1 {
+        grid.push(middle.clone());
+        if y % 1000 == 0 {
+            println!("making grid row {} of len {} done", y, h);
         }
-        grid.push(row);
     }
+    grid.push(top_or_bottom.clone());
+
     grid
 }
 
@@ -244,7 +258,7 @@ impl Line {
 
 fn print_grid(grid: &Vec<Vec<Option<bool>>>) {
     for line in grid {
-        let formatted = line.iter().map(|x| bool_to_char(x.unwrap()).to_string()).collect::<Vec<_>>().join("");
+        let formatted = line.iter().map(|x| opt_bool_to_char(*x).to_string()).collect::<Vec<_>>().join("");
         println!("{}", formatted);
     }
 }
@@ -262,4 +276,11 @@ fn bool_to_char(b: bool) -> char {
     } else {
         'X'
     }
+}
+
+fn opt_bool_to_char(b: Option<bool>) -> char {
+    if b.is_some() {
+        return bool_to_char(b.unwrap());
+    }
+    'N'
 }
