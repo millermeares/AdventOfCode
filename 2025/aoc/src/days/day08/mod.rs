@@ -141,6 +141,7 @@ impl Point3d {
         return (total as f64).sqrt();
     }
 
+    #[allow(dead_code)]
     fn as_str(&self) -> String {
         format!("{},{},{}" ,self.x, self.y, self.z)
     }
