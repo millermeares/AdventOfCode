@@ -25,22 +25,28 @@ impl Day for Day09 {
         // make it larger on purpose. 
         let exp_red: Vec<Point> = red.iter().map(|p: &Point| Point{x: p.x*2, y: p.y*2}).collect();
         let edge = edge_tiles(&exp_red);
-        let grid = &mut get_grid(&exp_red);
+        let exp_grid = &mut get_grid(&exp_red);
 
         let mut visited: HashSet<Point> = HashSet::new();
-        for i in 0..grid.len() {
-            for j in 0..grid[i].len() {
+        for i in 0..exp_grid.len() {
+            for j in 0..exp_grid[i].len() {
                 let np = Point{y: i as i32, x: j as i32};
                 if !visited.contains(&np) {
                     visited.insert(np.clone());
-                    fill_grid(&np, grid, &mut visited, &edge);
+                    fill_grid(&np, exp_grid, &mut visited, &edge);
                 }
             }
-            println!("Finished filling row?");
+            println!("Finished filling row of grid.");
         }
         
         println!("Finished filling grid");
-        print_grid(grid);
+        print_grid(exp_grid);
+
+        println!();
+        let grid = compress_grid(exp_grid.clone());
+        print_comp_grid(&grid);
+
+        // print_grid(&grid);
 
         // all tiles on the edge are red/green.
         // all tiles *within* the loop are red/green.
@@ -51,17 +57,39 @@ impl Day for Day09 {
         // to handle ability to squeeze out, i will multiply every point by 2. 
 
         let mut max_area: i64 = 0;
-        for i in 0..exp_red.len()-1 {
-            let p = &exp_red[i];
-            for j in i..exp_red.len() {
-                let other = &exp_red[j];
-                if p.area_rectange_reduced(other) > max_area && p.rectange_all_colored(other, &grid) {
-                    max_area = p.area_rectange_reduced(other)
+        for i in 0..red.len()-1 {
+            let p = &red[i];
+            for j in i..red.len() {
+                let other: &Point = &red[j];
+                if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &grid) {
+                    println!("New max area: {},{} to {},{}", p.x, p.y, other.x, other.y);
+                    max_area = p.area_rectangle(other)
                 }
             }
         }
+        let can_escape = point_can_escape(&Point{x: 6 ,y: 6}, &grid);
+        println!("{},{} can escape? {:?}", 6, 6, can_escape);
         max_area
     }
+}
+
+fn compress_grid(grid: Vec<Vec<Option<bool>>>) -> Vec<Vec<bool>> {
+    // for simplicity, earlier, i multipled all p.x and p.y by 2. i now need to undo that. 
+    let mut comp: Vec<Vec<bool>> = vec![];
+    for y in 0..grid.len() {
+        if y % 2 == 1 {
+            continue
+        }
+        let mut row: Vec<bool> = vec![];
+        for x in 0..grid[y].len() {
+            if x % 2 == 1 {
+                continue
+            }
+            row.push(grid[y][x].unwrap());
+        }
+        comp.push(row);
+    }
+    comp
 }
 
 // something is missing with 'visited'. 
@@ -143,19 +171,24 @@ impl Point {
         ((self.x - other.x + 1).abs() as i64 * (self.y - other.y  + 1).abs() as i64) as i64
     }
 
-    fn area_rectange_reduced(&self, other: &Point) -> i64 {
-        return Point{
-            x: self.x / 2,
-            y: self.y / 2
-        }.area_rectangle(&Point{
-            x: other.x / 2,
-            y: other.y / 2
-        });
-    }
+    fn rectangle_all_enclosed(&self, other: &Point, colored_grid: &Vec<Vec<bool>>) -> bool {
+        let mut small_y = self.y;
+        let mut big_y = other.y;
+        if small_y > big_y {
+            small_y = other.y;
+            big_y = self.y;
+        }
 
-    fn rectange_all_colored(&self, other: &Point, colored_grid: &Vec<Vec<Option<bool>>>) -> bool {
-        for y in self.y..other.y {
-            for x in self.x..other.x {  
+        let mut small_x = self.x;
+        let mut big_x = other.x;
+        if small_x > big_x {
+            small_x = other.x;
+            big_x = self.x;
+        }
+
+
+        for y in small_y..big_y+1 {
+            for x in small_x..big_x+1 {  
                 if point_can_escape(&Point{x: x, y: y}, &colored_grid) {
                     return false // can escape, that means not closed in
                 }
@@ -165,11 +198,8 @@ impl Point {
     }
 }
 
-fn point_can_escape(p: &Point, colored_grid: &Vec<Vec<Option<bool>>>) -> bool {
-    if colored_grid[p.y as usize][p.x as usize].is_none() {
-        panic!("Grid should be entirely filled in, this is weird");
-    }
-    return colored_grid[p.y as usize][p.x as usize].unwrap()
+fn point_can_escape(p: &Point, colored_grid: &Vec<Vec<bool>>) -> bool {
+    return colored_grid[p.y as usize][p.x as usize]
 }
 
 fn edge_tiles(points: &Vec<Point>) -> Vec<Line> {
@@ -215,6 +245,13 @@ impl Line {
 fn print_grid(grid: &Vec<Vec<Option<bool>>>) {
     for line in grid {
         let formatted = line.iter().map(|x| bool_to_char(x.unwrap()).to_string()).collect::<Vec<_>>().join("");
+        println!("{}", formatted);
+    }
+}
+
+fn print_comp_grid(grid: &Vec<Vec<bool>>) {
+    for line in grid {
+        let formatted = line.iter().map(|x| bool_to_char(*x).to_string()).collect::<Vec<_>>().join("");
         println!("{}", formatted);
     }
 }
