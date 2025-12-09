@@ -21,120 +21,27 @@ impl Day for Day09 {
     }
 
     fn solve_2(&self, input: String) -> i64 {
-        let red: Vec<Point> = input.split("\n").map(|p: &str| point_from_line(p)).collect();
-        // make it larger on purpose. 
-        let exp_red: Vec<Point> = red.iter().map(|p: &Point| Point{x: p.x*2, y: p.y*2}).collect();
-        let edge = edge_tiles(&exp_red);
-        let exp_grid = &mut get_grid(&exp_red);
+        let mut red: Vec<Point> = input.split("\n").map(|p: &str| point_from_line(p)).collect();
+        red.reverse();
+        let edges = edge_tiles(&red);
 
-        let mut visited: HashSet<Point> = HashSet::new();
-        for i in 0..exp_grid.len() {
-            for j in 0..exp_grid[i].len() {
-                let np = Point{y: i as i32, x: j as i32};
-                if !visited.contains(&np) {
-                    visited.insert(np.clone());
-                    fill_grid(&np, exp_grid, &mut visited, &edge);
-                }
-            }
-            println!("Finished filling row of grid.");
-        }
-        
-        println!("Finished filling grid");
-        print_grid(exp_grid);
-
-        println!();
-        let grid = compress_grid(exp_grid.clone());
-        print_comp_grid(&grid);
-
-        // print_grid(&grid);
-
-        // all tiles on the edge are red/green.
-        // all tiles *within* the loop are red/green.
-
-        // rectangle still must have red tiles in opposite corners. But all tiles within it must be red/green.
-        
-        // what if i make a grid. and then figure out all colored tiles with "can escape grid" with a visited set. i treat the lines like walls. 
-        // to handle ability to squeeze out, i will multiply every point by 2. 
-
-        println!("Grid calculations completed.");
         let mut max_area: i64 = 0;
         for i in 0..red.len()-1 {
             let p = &red[i];
             for j in i..red.len() {
                 let other: &Point = &red[j];
-                if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &grid) {
+                println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
+                if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &edges) {
                     println!("New max area: {},{} to {},{}", p.x, p.y, other.x, other.y);
                     max_area = p.area_rectangle(other)
                 }
             }
-            if i % 1000 == 0 {
+            if i % 100 == 0 {
                 println!("Progress being made. Start corner rows complete: {} out of {}", i+1, red.len()-1)
             }
         }
         max_area
     }
-}
-
-fn compress_grid(grid: Vec<Vec<Option<bool>>>) -> Vec<Vec<bool>> {
-    // for simplicity, earlier, i multipled all p.x and p.y by 2. i now need to undo that. 
-    let mut comp: Vec<Vec<bool>> = vec![];
-    for y in 0..grid.len() {
-        if y % 2 == 1 {
-            continue
-        }
-        let mut row: Vec<bool> = vec![];
-        for x in 0..grid[y].len() {
-            if x % 2 == 1 {
-                continue
-            }
-            row.push(grid[y][x].unwrap());
-        }
-        if y % 1000 == 0 {
-            println!("Compression progress being made. rows complete: {} out of {}", y+1, grid.len()-1)
-        }
-        comp.push(row);
-    }
-    comp
-}
-
-// something is missing with 'visited'. 
-// return whether or not start can escape.
-fn fill_grid(start: &Point, grid: &mut Vec<Vec<Option<bool>>>, visited: &mut HashSet<Point>, lines: &Vec<Line>) -> bool {
-    if visited.len() % 100000 == 0 {
-        println!("Making progress! {} out of {} visited so far.", visited.len(), grid.len() as i64 * grid[0].len() as i64)
-    }
-    if grid[start.y as usize][start.x as usize].is_some() {
-        return grid[start.y as usize][start.x as usize].unwrap()
-    }
-    
-    if point_on_a_line(lines, start) {
-        grid[start.y as usize][start.x as usize] = Some(false);
-        return grid[start.y as usize][start.x as usize].unwrap()
-    }
-
-    let y_turns = vec![-1, 0, 1];
-    let x_turns = vec![-1, 0, 1];
-    for x_turn in &x_turns {
-        for y_turn in &y_turns {
-            if x_turn == &0 && y_turn == &0 || (x_turn != &0 && y_turn != &0) {
-                continue // either self or diagonal.
-            }
-            let np = Point{x: start.x+x_turn, y: start.y+y_turn};
-            if visited.contains(&np) {
-                // already visited this point. it should be handled by the recursion. continue.
-                continue
-            }
-            visited.insert(np.clone());
-            // if any neighbors can escape, that means i can escape. 
-            if fill_grid(&np, grid, visited, lines) {
-                grid[start.y as usize][start.x as usize] = Some(true);
-                return true
-            }
-        }
-    }
-    // no neighbors could escape. that means i cannot escape.
-    grid[start.y as usize][start.x as usize] = Some(false);
-    false
 }
 
 fn point_on_a_line(lines: &Vec<Line>, point: &Point) -> bool {
@@ -144,33 +51,6 @@ fn point_on_a_line(lines: &Vec<Line>, point: &Point) -> bool {
         }
     }
     return false
-}
-
-fn get_grid(points: &Vec<Point>) -> Vec<Vec<Option<bool>>>{
-    let max_x = points.iter().map(|p| p.x).max().unwrap();
-    let max_y = points.iter().map(|p| p.y).max().unwrap();
-    let w = max_x  as usize + 2;
-    let h = max_y as usize + 2;
-
-    // Prebuild the top/bottom row and middle-row template
-    let top_or_bottom = vec![Some(true); w];
-
-    let mut middle = vec![None; w];
-    middle[0] = Some(true);
-    middle[w - 1] = Some(true);
-
-    let mut grid = Vec::with_capacity(h);
-
-    grid.push(top_or_bottom.clone());
-    for y in 1..h-1 {
-        grid.push(middle.clone());
-        if y % 1000 == 0 {
-            println!("making grid row {} of len {} done", y, h);
-        }
-    }
-    grid.push(top_or_bottom.clone());
-
-    grid
 }
 
 #[derive(Hash, Eq, PartialEq, Clone)]
@@ -185,7 +65,7 @@ impl Point {
         ((self.x - other.x + 1).abs() as i64 * (self.y - other.y  + 1).abs() as i64) as i64
     }
 
-    fn rectangle_all_enclosed(&self, other: &Point, colored_grid: &Vec<Vec<bool>>) -> bool {
+    fn rectangle_all_enclosed(&self, other: &Point, edges: &Vec<Line>) -> bool {
         let mut small_y = self.y;
         let mut big_y = other.y;
         if small_y > big_y {
@@ -201,9 +81,10 @@ impl Point {
         }
 
 
+        // updated approach: perimeter, not area. 
         for y in small_y..big_y+1 {
             for x in small_x..big_x+1 {  
-                if point_can_escape(&Point{x: x, y: y}, &colored_grid) {
+                if point_can_escape(&Point{x: x, y: y}, edges) {
                     return false // can escape, that means not closed in
                 }
             }
@@ -212,8 +93,14 @@ impl Point {
     }
 }
 
-fn point_can_escape(p: &Point, colored_grid: &Vec<Vec<bool>>) -> bool {
-    return colored_grid[p.y as usize][p.x as usize]
+fn point_can_escape(p: &Point, lines: &Vec<Line>) -> bool {
+    if point_on_a_line(lines, p) {  
+        return false;
+    }
+    let edge_point = Point{x: 0, y: p.y};
+    let line_to_edge = Line{start: edge_point, end: p.clone()};
+    let can_escape = line_to_edge.count_intersecting_lines(lines) % 2 == 0;
+    can_escape
 }
 
 fn edge_tiles(points: &Vec<Point>) -> Vec<Line> {
@@ -242,6 +129,21 @@ struct Line {
 }
 
 impl Line {
+    fn ordered_by_x(&self) -> (Point, Point) {
+        if self.start.x < self.end.x {
+            return (self.start.clone(), self.end.clone());
+        }
+        (self.end.clone(), self.start.clone())
+    }
+
+    fn ordered_by_y(&self) -> (Point, Point) {
+        if self.start.y < self.end.y {
+            return (self.start.clone(), self.end.clone());
+        }
+        (self.end.clone(), self.start.clone())
+    }
+
+
     fn point_is_on_line(&self, p: &Point) -> bool {
         // either all x's have to be equal or all y's have to be equal.
         if p.y == self.start.y && p.y == self.end.y {
@@ -254,19 +156,51 @@ impl Line {
         }
         return false
     }
-}
 
-fn print_grid(grid: &Vec<Vec<Option<bool>>>) {
-    for line in grid {
-        let formatted = line.iter().map(|x| opt_bool_to_char(*x).to_string()).collect::<Vec<_>>().join("");
-        println!("{}", formatted);
+    fn is_vertical(&self) -> bool {
+        return self.start.x == self.end.x;
     }
-}
 
-fn print_comp_grid(grid: &Vec<Vec<bool>>) {
-    for line in grid {
-        let formatted = line.iter().map(|x| bool_to_char(*x).to_string()).collect::<Vec<_>>().join("");
-        println!("{}", formatted);
+    fn is_horizontal(&self) -> bool {
+        self.start.y == self.end.y
+    }
+
+    fn intersects(&self, line: &Line) -> bool {
+        if self.is_vertical() == line.is_vertical() {
+            return false // either both vertical or both horizontal.
+        }
+        
+        let horiz_y = self.start.y; // end.y an dstart.y are equal.
+        // self.y must be between line.lower.y and line.higher.y
+        let (sy, ey) = line.ordered_by_y();
+        if !(horiz_y >= sy.y && horiz_y <= ey.y) {
+            return false;
+        }
+
+        let vert_x = line.start.x;
+        let (sx, ex) = self.ordered_by_x();
+        if !(vert_x >= sx.x && vert_x <= ex.x) {
+            return false;
+        }
+        return true;
+    }
+
+    fn count_intersecting_lines(&self, lines: &Vec<Line>) -> i32 {
+        let mut intersections = 0;
+        if self.is_vertical() {
+            panic!("This is only written for horizontal lines");
+        }
+        for line in lines {
+            if self.intersects(&line) {
+                // if lines.len() < 100 {
+                //     println!("Line {},{} to {},{} intersects {},{} to {},{}", self.start.x, self.start.y, self.end.x, self.end.y, line.start.x, line.start.y, line.end.x, line.end.y);
+                // } else {
+                //     println!("Line {},{} to {},{} does not intersect {},{} to {},{}", self.start.x, self.start.y, self.end.x, self.end.y, line.start.x, line.start.y, line.end.x, line.end.y);
+                // }
+                intersections += 1;
+            }
+        }
+        intersections
     }
 }
 
