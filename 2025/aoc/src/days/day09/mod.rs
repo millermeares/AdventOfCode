@@ -21,24 +21,22 @@ impl Day for Day09 {
     }
 
     fn solve_2(&self, input: String) -> i64 {
-        let mut red: Vec<Point> = input.split("\n").map(|p: &str| point_from_line(p)).collect();
-        red.reverse();
+        let red: Vec<Point> = input.split("\n").map(|p: &str| point_from_line(p)).collect();
         let edges = edge_tiles(&red);
 
         let mut max_area: i64 = 0;
         for i in 0..red.len()-1 {
             let p = &red[i];
+            println!("Evaluating {},{}", p.x, p.y);
             for j in i..red.len() {
                 let other: &Point = &red[j];
                 println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
                 if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &edges) {
-                    println!("New max area: {},{} to {},{}", p.x, p.y, other.x, other.y);
-                    max_area = p.area_rectangle(other)
+                    max_area = p.area_rectangle(other);
+                    println!("New max area: {} from {},{} to {},{}", max_area, p.x, p.y, other.x, other.y);
                 }
             }
-            if i % 100 == 0 {
-                println!("Progress being made. Start corner rows complete: {} out of {}", i+1, red.len()-1)
-            }
+            println!("{} of {} complete.", i+1, red.len())
         }
         max_area
     }
@@ -80,15 +78,25 @@ impl Point {
             big_x = self.x;
         }
 
-
-        // updated approach: perimeter, not area. 
-        for y in small_y..big_y+1 {
-            for x in small_x..big_x+1 {  
-                if point_can_escape(&Point{x: x, y: y}, edges) {
-                    return false // can escape, that means not closed in
-                }
+        for x in small_x..big_x+1 {
+            if point_can_escape(&Point{x: x, y: small_y}, &edges) {
+                return false;
+            }
+            if point_can_escape(&Point{x: x, y: big_y}, &edges) {
+                return false;
             }
         }
+
+        for y in small_y..big_y+1 {
+            if point_can_escape(&Point{x: small_x, y: y}, &edges) {
+                return false;
+            }
+            if point_can_escape(&Point{x: big_x, y: y}, &edges) {
+                return false;
+            }
+        }
+
+        
         return true
     }
 }
@@ -170,7 +178,7 @@ impl Line {
             return false // either both vertical or both horizontal.
         }
         
-        let horiz_y = self.start.y; // end.y an dstart.y are equal.
+        let horiz_y = self.start.y; // end.y and start.y are equal.
         // self.y must be between line.lower.y and line.higher.y
         let (sy, ey) = line.ordered_by_y();
         if !(horiz_y >= sy.y && horiz_y <= ey.y) {
@@ -192,29 +200,9 @@ impl Line {
         }
         for line in lines {
             if self.intersects(&line) {
-                // if lines.len() < 100 {
-                //     println!("Line {},{} to {},{} intersects {},{} to {},{}", self.start.x, self.start.y, self.end.x, self.end.y, line.start.x, line.start.y, line.end.x, line.end.y);
-                // } else {
-                //     println!("Line {},{} to {},{} does not intersect {},{} to {},{}", self.start.x, self.start.y, self.end.x, self.end.y, line.start.x, line.start.y, line.end.x, line.end.y);
-                // }
                 intersections += 1;
             }
         }
         intersections
     }
-}
-
-fn bool_to_char(b: bool) -> char {
-    if b {
-        '.'
-    } else {
-        'X'
-    }
-}
-
-fn opt_bool_to_char(b: Option<bool>) -> char {
-    if b.is_some() {
-        return bool_to_char(b.unwrap());
-    }
-    'N'
 }
