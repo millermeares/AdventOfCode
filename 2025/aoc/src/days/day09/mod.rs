@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::Day;
 
 pub struct Day09 {}
@@ -30,13 +28,11 @@ impl Day for Day09 {
             println!("Evaluating {},{}", p.x, p.y);
             for j in i..red.len() {
                 let other: &Point = &red[j];
-                println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
                 if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &edges) {
                     max_area = p.area_rectangle(other);
                     println!("New max area: {} from {},{} to {},{}", max_area, p.x, p.y, other.x, other.y);
                 }
             }
-            println!("{} of {} complete.", i+1, red.len())
         }
         max_area
     }
@@ -103,13 +99,11 @@ impl Point {
 
 fn point_can_escape(p: &Point, lines: &Vec<Line>) -> bool {
     if point_on_a_line(lines, p) {  
-        println!("{},{} can escape {}", p.x, p.y, false);
         return false;
     }
     let edge_point = Point{x: 0, y: p.y};
     let line_to_edge = Line{start: edge_point, end: p.clone()};
     let can_escape = line_to_edge.count_intersecting_lines(lines) % 2 == 0;
-    println!("{},{} can escape {}", p.x, p.y, can_escape);
     can_escape
 }
 
@@ -171,10 +165,6 @@ impl Line {
         return self.start.x == self.end.x;
     }
 
-    fn is_horizontal(&self) -> bool {
-        self.start.y == self.end.y
-    }
-
     fn intersects(&self, line: &Line) -> bool {
         if self.is_vertical() == line.is_vertical() {
             return false // either both vertical or both horizontal.
@@ -192,7 +182,6 @@ impl Line {
         if !(vert_x >= sx.x && vert_x <= ex.x) {
             return false;
         }
-        println!("{},{} to {},{} intersects with {},{} to {},{}", self.start.x, self.start.y, self.end.x, self.end.y, line.start.x, line.start.y, line.end.x, line.end.y);
         return true;
     }
 
