@@ -155,7 +155,7 @@ impl Line {
     fn point_is_on_line(&self, p: &Point) -> bool {
         // either all x's have to be equal or all y's have to be equal.
         if p.y == self.start.y && p.y == self.end.y {
-            return (p.x >= self.start.x && p.y <= self.end.x) || (p.x >= self.end.x && p.x <= self.start.x)
+            return (p.x >= self.start.x && p.x <= self.end.x) || (p.x >= self.end.x && p.x <= self.start.x)
         }
 
         if p.x == self.start.x && p.x == self.end.x {
