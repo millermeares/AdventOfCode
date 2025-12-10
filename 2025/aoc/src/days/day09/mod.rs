@@ -30,7 +30,7 @@ impl Day for Day09 {
             println!("Evaluating {},{}", p.x, p.y);
             for j in i..red.len() {
                 let other: &Point = &red[j];
-                println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
+                // println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
                 if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &edges) {
                     max_area = p.area_rectangle(other);
                     println!("New max area: {} from {},{} to {},{}", max_area, p.x, p.y, other.x, other.y);
@@ -60,7 +60,7 @@ struct Point {
 impl Point {
     fn area_rectangle(&self, other: &Point) -> i64 {
         // xdiff * ydiff inclusive.
-        ((self.x - other.x + 1).abs() as i64 * (self.y - other.y  + 1).abs() as i64) as i64
+        ((self.x as i64 - other.x as i64).abs() + 1) * ((self.y as i64 - other.y as i64).abs() + 1)
     }
 
     fn rectangle_all_enclosed(&self, other: &Point, edges: &Vec<Line>) -> bool {
