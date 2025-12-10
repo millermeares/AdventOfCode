@@ -21,16 +21,16 @@ impl Day for Day09 {
     }
 
     fn solve_2(&self, input: String) -> i64 {
-        let red: Vec<Point> = input.split("\n").map(|p: &str| point_from_line(p)).collect();
+        let mut red: Vec<Point> = input.split("\n").map(|p: &str| point_from_line(p)).collect();
+        red.reverse();
         let edges = edge_tiles(&red);
-
         let mut max_area: i64 = 0;
         for i in 0..red.len()-1 {
             let p = &red[i];
             println!("Evaluating {},{}", p.x, p.y);
             for j in i..red.len() {
                 let other: &Point = &red[j];
-                // println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
+                println!("Evaluating {},{} to {},{}", p.x, p.y, other.x, other.y);
                 if p.area_rectangle(other) > max_area && p.rectangle_all_enclosed(other, &edges) {
                     max_area = p.area_rectangle(other);
                     println!("New max area: {} from {},{} to {},{}", max_area, p.x, p.y, other.x, other.y);
@@ -103,11 +103,13 @@ impl Point {
 
 fn point_can_escape(p: &Point, lines: &Vec<Line>) -> bool {
     if point_on_a_line(lines, p) {  
+        println!("{},{} can escape {}", p.x, p.y, false);
         return false;
     }
     let edge_point = Point{x: 0, y: p.y};
     let line_to_edge = Line{start: edge_point, end: p.clone()};
     let can_escape = line_to_edge.count_intersecting_lines(lines) % 2 == 0;
+    println!("{},{} can escape {}", p.x, p.y, can_escape);
     can_escape
 }
 
@@ -181,7 +183,7 @@ impl Line {
         let horiz_y = self.start.y; // end.y and start.y are equal.
         // self.y must be between line.lower.y and line.higher.y
         let (sy, ey) = line.ordered_by_y();
-        if !(horiz_y >= sy.y && horiz_y <= ey.y) {
+        if !(horiz_y >= sy.y && horiz_y < ey.y) {
             return false;
         }
 
@@ -190,6 +192,7 @@ impl Line {
         if !(vert_x >= sx.x && vert_x <= ex.x) {
             return false;
         }
+        println!("{},{} to {},{} intersects with {},{} to {},{}", self.start.x, self.start.y, self.end.x, self.end.y, line.start.x, line.start.y, line.end.x, line.end.y);
         return true;
     }
 
