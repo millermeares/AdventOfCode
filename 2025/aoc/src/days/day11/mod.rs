@@ -26,30 +26,58 @@ impl Day for Day11 {
 
     fn solve_2(&self, input: String) -> i64 {
         let devices: Vec<Device> = input.split("\n").map(|d| device_from_line(d.to_string())).collect();
-        let mut device_map: HashMap<String, &Device> = HashMap::new();
+        let mut graph: HashMap<String, &Device> = HashMap::new();
         for d in &devices {
-            device_map.insert(d.name.clone(), d);
+            graph.insert(d.name.clone(), d);
         }
 
-        let mut results: Vec<Vec<String>> = vec![];
-        let mut path_so_far: Vec<String> = vec![];
-        find_paths(&device_map, &"svr".to_string(), &"out".to_string(), &mut path_so_far, &mut HashSet::new(), &mut results);
-        
-        let mut visited_both = 0;
-        for i in 0..results.len() {
-            let path = &results[i];
-            println!("Evaluating fft and dac containment for {} out of {} with path len of {} ", i+1, results.len(), path.len());
-            if path.contains(&"dac".to_string()) && path.contains(&"fft".to_string()) {
-                visited_both += 1;
-            }
-        }
-        visited_both as i64
+        // ok so i need:
+        // f_o = fft to out (no dac or svr in path)
+        let f_o = find_paths_without_prohibited(&graph, &"fft", &"out", &vec!["dac", "svr"]);
+        println!("Calculated {} paths from {} to {} without {} or {}", f_o.len(), "fft", "out", "dac", "svr");
+        // d_o = dac to out (no fft or svr in path)
+        let d_o = find_paths_without_prohibited(&graph, &"dac", &"out", &vec!["fft", "svr"]);
+        println!("Calculated {} paths from {} to {} without {} or {}", d_o.len(), "dac", "out", "fft", "svr");
+
+        // f_d = fft to dac (no svr or out in path)
+        let f_d: Vec<Vec<String>> = find_paths_without_prohibited(&graph, &"fft", &"dac", &vec!["svr", "out"]);
+        println!("Calculated {} paths from {} to {} without {} or {}", f_d.len(), "fft", "dac", "svr", "out");
+
+        // d_f = dac to fft (no svr or out in path)
+        let d_f = find_paths_without_prohibited(&graph, &"dac", &"fft", &vec!["svr", "out"]);
+        println!("Calculated {} paths from {} to {} without {} or {}", d_f.len(), "dac", "fft", "svr", "out");
+
+        // s_f = svr to fft (no dac or out in path)
+        let s_f = find_paths_without_prohibited(&graph, &"svr", &"fft", &vec!["dac", "out"]);
+        println!("Calculated {} paths from {} to {} without {} or {}", s_f.len(), "svr", "fft", "dac", "out");
+
+        // s_d = svr to dac (no fft or out in path)
+        let s_d = find_paths_without_prohibited(&graph, &"svr", &"dac", &vec!["fft", "out"]);
+        println!("Calculated {} paths from {} to {} without {} or {}", s_d.len(), "svr", "dac", "fft", "out");
+
+
+        // really 2 different ways to do this. 
+        // svr -> fft -> dac -> out
+        // svr -> dac -> fft -> out
+
+        // s_f * f_d * d_o
+        // + 
+        // s_d * d_f * f_o
+        ((s_f.len() * f_d.len() * d_o.len()) + (s_d.len() * d_f.len() * f_o.len())) as i64
     }
 }
 
-// fn find_paths_containing(graph: &HashMap<String, &Device>, start: &String, end: &String, containing: String) -> Vec<Vec<String>> {
-
-// }
+fn find_paths_without_prohibited(graph: &HashMap<String, &Device>, start: &str, end: &str, prohibited: &Vec<&str>) -> Vec<Vec<String>> {
+    // i can 'prohibit visiting' by manipulating the visited map 
+    let mut results: &mut Vec<Vec<String>> = &mut vec![];
+    let mut path_so_far: &mut Vec<String> = &mut vec![];
+    let mut visited: &mut HashSet<String> = &mut HashSet::new();
+    for node in prohibited {
+        visited.insert(node.to_string().clone());
+    }
+    find_paths(graph, &start.to_string(), &end.to_string(), path_so_far, visited, results);
+    results.to_vec()
+}
 
 // directed graph that has possible cycles. 
 // basically get all of the paths from node to another node.
@@ -59,13 +87,9 @@ fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, pa
 
     if start == end {
         let completed_path = path.clone();
-        let qualifies = path_contains_required_nodes(&completed_path);
         results.push(completed_path);
         visited.remove(start);
         path.remove(path.len()-1);
-        if results.len() % 1000000 == 0 {
-            println!("New path found with qualification {}. Total paths so far: {}.", qualifies, results.len());
-        }
         return // we are at destination, we can stop.
     }
     let cur = graph.get(start).unwrap_or_else(|| {
@@ -79,10 +103,6 @@ fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, pa
     }
     visited.remove(start);
     path.remove(path.len()-1);
-}
-
-fn path_contains_required_nodes(path: &Vec<String>) -> bool {
-    path.contains(&"dac".to_string()) && path.contains(&"fft".to_string())
 }
 
 fn device_from_line(input: String) -> Device {
@@ -99,4 +119,8 @@ fn device_from_line(input: String) -> Device {
 struct Device {
     name: String,
     outputs: Vec<String>
+}
+
+fn get_memo() {
+
 }
