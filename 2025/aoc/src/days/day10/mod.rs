@@ -251,11 +251,8 @@ fn min_button_to_reach_joltage_smart(m: &mut Machine) -> i64 {
         buttons_for_each_index.push(buttons_with_index(i, &m.get_buttons()))
     }
 
-    // this is like calculus with a bunch of dimensions. there are many options, i want min. 
-
-
+    // one thing i am doing errantly - i should just be *starting* with possible combinations rather than incrementing to get to them.
     // we know each button can only be pressed a max of <joltage> times. 
-
     // ok now it's about the combination of possible button pushes that would yield the desired value in each joltage field. 
 
     panic!("Cannot reach joltage");

@@ -11,6 +11,7 @@ use crate::days::day07::Day07;
 use crate::days::day08::Day08;
 use crate::days::day09::Day09;
 use crate::days::day10::Day10;
+use crate::days::day11::Day11;
 
 
 pub mod days;
@@ -42,6 +43,7 @@ fn choose_day(d: i32) -> Box<dyn Day> {
         8 => Box::new(Day08 {}),
         9 => Box::new(Day09 {}),
         10 => Box::new(Day10 {}),
+        11 => Box::new(Day11 {}),
         _ => panic!("Could not find day for {d}"),
     }
 }
