@@ -17,7 +17,7 @@ impl Day for Day11 {
             device_map.insert(d.name.clone(), d);
         }
 
-        let path_ct = find_paths(&device_map, &"you".to_string(), &"out".to_string(), &mut HashSet::new(), &mut HashMap::new());
+        let path_ct = find_paths(&device_map, &"you".to_string(), &"out".to_string(), &mut HashSet::new(), &mut HashMap::new(), None);
         // find every path from "you" to "out". 
         path_ct
     }
@@ -28,12 +28,12 @@ impl Day for Day11 {
         for d in &devices {
             graph.insert(d.name.clone(), d);
         }
+        let out_device = &Device { name: "out".to_string(), outputs: vec![] };
+        graph.insert("out".to_string(), out_device); // out has no paths away.
 
         let memo: &mut HashMap<String, i64> = &mut HashMap::new();
         // ok so i need:
-        // f_o = fft to out (no dac or svr in path)
-        let f_o = find_paths_without_prohibited(&graph, &"fft", &"out", &vec!["dac", "svr"], memo);
-        println!("Calculated {} paths from {} to {} without {} or {}", f_o, "fft", "out", "dac", "svr");
+        
         // d_o = dac to out (no fft or svr in path)
         let d_o = find_paths_without_prohibited(&graph, &"dac", &"out", &vec!["fft", "svr"], memo);
         println!("Calculated {} paths from {} to {} without {} or {}", d_o, "dac", "out", "fft", "svr");
@@ -54,6 +54,10 @@ impl Day for Day11 {
         let s_d = find_paths_without_prohibited(&graph, &"svr", &"dac", &vec!["fft", "out"], memo);
         println!("Calculated {} paths from {} to {} without {} or {}", s_d, "svr", "dac", "fft", "out");
 
+        // f_o = fft to out (no dac or svr in path)
+        let f_o = find_paths_without_prohibited(&graph, &"fft", &"out", &vec!["dac", "svr"], memo);
+        println!("Calculated {} paths from {} to {} without {} or {}", f_o, "fft", "out", "dac", "svr");
+
 
         // really 2 different ways to do this. 
         // svr -> fft -> dac -> out
@@ -68,16 +72,48 @@ impl Day for Day11 {
 
 fn find_paths_without_prohibited(graph: &HashMap<String, &Device>, start: &str, end: &str, prohibited: &Vec<&str>, memo: &mut HashMap<String, i64>) -> i64 {
     // i can 'prohibit visiting' by manipulating the visited map 
-    let mut visited: &mut HashSet<String> = &mut HashSet::new();
+    let visited: &mut HashSet<String> = &mut HashSet::new();
     for node in prohibited {
         visited.insert(node.to_string().clone());
     }
-    return find_paths(graph, &start.to_string(), &end.to_string(), visited, memo);
+    let can_reach_map: HashMap<String, bool>= build_can_reach_map(graph, &end.to_string(), &prohibited);
+    println!("Can reach map size: {}, graph size: {}", can_reach_map.len(), graph.iter().count());
+    return find_paths(graph, &start.to_string(), &end.to_string(), visited, memo, Some(&can_reach_map));
+}
+
+fn build_can_reach_map(graph: &HashMap<String, &Device>, end: &String, prohibited: &Vec<&str>) -> HashMap<String, bool> {
+    let can_reach_map: &mut HashMap<String, bool> = &mut HashMap::new();
+    let visited = &mut HashSet::new();
+    for node in prohibited {
+        visited.insert(node.to_string());
+    }
+    for d_name in graph.keys() {
+        can_reach_map.insert(d_name.clone(), can_reach(graph, d_name, end, visited));
+    }
+    can_reach_map.clone()
+}
+
+fn can_reach(graph: &HashMap<String, &Device>, start: &String, end: &String, visited: &mut HashSet<String>) -> bool {
+    if start == end {
+        return true
+    }
+    visited.insert(start.clone());
+    let cur = graph.get(start).unwrap_or_else(|| {
+        panic!("Key `{start}` not found in map");
+    });
+    for way in &cur.outputs {
+        if can_reach(graph, way, end, visited) {
+            visited.remove(start);
+            return true
+        }
+    }
+    visited.remove(start);
+    return false
 }
 
 // directed graph that has possible cycles. 
 // basically get all of the paths from node to another node.
-fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, visited: &mut HashSet<String>, memo: &mut HashMap<String, i64>) -> i64 {
+fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, visited: &mut HashSet<String>, memo: &mut HashMap<String, i64>, can_reach_map: Option<&HashMap<String, bool>>) -> i64 {
     visited.insert(start.clone());
     if start == end {
         visited.remove(start);
@@ -87,6 +123,13 @@ fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, vi
     if memo.contains_key(&memo_key) {
         return *memo.get(&memo_key).unwrap();
     }
+
+    if can_reach_map.is_some() {
+        if !can_reach_map.unwrap().get(start).unwrap() {
+            println!("Cannot reach {} from {}, terminating early", end, start);
+            return 0 // cannot reach destination from here.
+        }
+    }
     let cur = graph.get(start).unwrap_or_else(|| {
         panic!("Key `{start}` not found in map");
     });
@@ -95,7 +138,7 @@ fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, vi
         if visited.contains(way) {
             continue // already visited this node, re-entering would be a cycle.
         }
-        total_paths += find_paths(&graph, &way, &end, visited, memo);
+        total_paths += find_paths(&graph, &way, &end, visited, memo, can_reach_map);
     }
     visited.remove(start);
     memo.insert(memo_key, total_paths);
@@ -119,6 +162,8 @@ struct Device {
 }
 
 fn get_memo_key(start: &String, end: &String, visited: &mut HashSet<String>) -> String {
-    let visited_keys = visited.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(",");
+    let mut v: Vec<_> = visited.iter().collect();
+    v.sort(); // sorts by &String
+    let visited_keys = v.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(",");
     format!("{}-{}-{}", start, end, visited_keys)
 }
