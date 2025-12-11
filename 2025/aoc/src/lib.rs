@@ -20,22 +20,22 @@ pub trait Day {
     fn solve_2(&self, input: String) -> i64;
 
     fn solve_sample_1(&self) -> i64 {
-        let sample_input = get_input(self.get_day(), "sample");
+        let sample_input = self.get_input(self.get_day(), "sample");
         return self.solve_1(sample_input);
     }
 
     fn solve_real_1(&self) -> i64 {
-        let real_input: String = get_input(self.get_day(), "input");
+        let real_input: String = self.get_input(self.get_day(), "input");
         return self.solve_1(real_input);
     }
 
     fn solve_sample_2(&self) -> i64 {
-        let sample_input = get_input(self.get_day(), "sample");
+        let sample_input = self.get_input(self.get_day(), "sample");
         return self.solve_2(sample_input);
     }
 
     fn solve_real_2(&self) -> i64 {
-        let real_input: String = get_input(self.get_day(), "input");
+        let real_input: String = self.get_input(self.get_day(), "input");
         return self.solve_2(real_input);
     }
 
@@ -51,6 +51,17 @@ pub trait Day {
             .collect();
         s.parse::<i32>().unwrap()
     }
+    fn get_input(&self, d: i32, t: &str) -> String {
+        let path = get_path(d, t);
+        let mut file = match File::open(&path) {
+            Err(why) => panic!("could not open {}; {}", path, why),
+            Ok(file) => file,
+        };
+        let mut s = String::new();
+        file.read_to_string(&mut s).unwrap();
+        s
+    }
+
 }
 
 fn get_path(d: i32, t: &str) -> String {
@@ -62,13 +73,3 @@ fn get_path(d: i32, t: &str) -> String {
     p
 }
 
-fn get_input(d: i32, t: &str) -> String {
-    let path = get_path(d, t);
-    let mut file = match File::open(&path) {
-        Err(why) => panic!("could not open {}; {}", path, why),
-        Ok(file) => file,
-    };
-    let mut s = String::new();
-    file.read_to_string(&mut s).unwrap();
-    s
-}
