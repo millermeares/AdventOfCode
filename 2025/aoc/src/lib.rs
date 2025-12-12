@@ -73,3 +73,6 @@ fn get_path(d: i32, t: &str) -> String {
     p
 }
 
+pub fn index_of(input: &String, f: char) -> usize {
+    return input.chars().position(|c| c == f).unwrap()
+}
