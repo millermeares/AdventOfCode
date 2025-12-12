@@ -24,7 +24,8 @@ impl Day for Day12 {
 }
 
 struct Blueprint {
-    grid: Vec<Vec<char>>
+    grid: Vec<Vec<char>>,
+    idx: usize
 }
 
 impl Blueprint {
@@ -36,12 +37,13 @@ impl Blueprint {
         let one = flip90(&original);
         let two = flip90(&one);
         let three = flip90(&two);
-        vec![Present{ grid: original }, Present{ grid: one }, Present { grid: two }, Present { grid: three }]
+        vec![Present{ grid: original, blueprint_idx: self.idx}, Present{ grid: one, blueprint_idx: self.idx }, Present { grid: two, blueprint_idx: self.idx }, Present { grid: three, blueprint_idx: self.idx }]
     }
 }
 
 struct Present {
-    grid: Vec<Vec<char>>
+    grid: Vec<Vec<char>>,
+    blueprint_idx: usize
 }
 
 impl Present {
@@ -79,29 +81,28 @@ impl Space {
         }
 
         // print_grid(&self.grid);
-
-        for i in  0..blueprints.len() {
-            if required[i] == 0 {
-                continue // already placed all needed for this present.
+        let possible_presents = get_all_possible_presents(blueprints, required);
+        for present in possible_presents {
+            let i = present.blueprint_idx;
+            let (placed, (px, py)) = self.greedy_place_present(&present);
+            if !placed {
+                // not place-able, try to place the next one.
+                continue
             }
-            let blueprint = &blueprints[i];
-            for present in blueprint.possible_present_shapes() {
-                let (placed, (px, py)) = self.greedy_place_present(&present);
-                if !placed {
-                    // not place-able, try to place the next one.
-                    continue
-                }
-                // it was successfully placed. decrement required and see if it works.
-                decrement_required(i, required);
-                if self.can_place_presents_to_satisfy_required(blueprints, required) {
-                    return true
-                }
-                // if we were not able to fit everyting with this placement, undo the placement and continue on. 
-                increment_required(i, required);
-                self.remove_present((px, py), &present);
+            // it was successfully placed. decrement required and see if it works.
+            decrement_required(i, required);
+            if self.can_place_presents_to_satisfy_required(blueprints, required) {
+                return true
             }
+            // if we were not able to fit everyting with this placement, undo the placement and continue on. 
+            increment_required(i, required);
+            self.remove_present((px, py), &present);
         }
         false
+    }
+
+    fn choose_next_present(&self, blueprint: &Vec<Blueprint>, required: Vec<i32>) {
+
     }
 
     // places present at first possible location.
@@ -147,6 +148,40 @@ impl Space {
             self.grid[y+p_y][x+p_x] = '.'
         }
     }
+
+    // returns amount of squares in the grid that are '.' and have '#' around them. for now, just starts with single holes. in theory, could also have two. 
+    fn count_holes(&self) -> i32 {
+        let mut holes = 0;
+        for y in 0..self.grid.len() {
+            for x in 0..self.grid[y].len() {
+                if self.grid[y][x] != '.' {
+                    continue
+                }
+                let left_filled = x == 0 || self.grid[y][x-1] == '#';
+                let right_filled = x == self.grid[y].len()-1 || self.grid[y][x+1] == '#';
+                let above_filled = y == 0 || self.grid[y-1][x] == '#';
+                let below_filled = y == self.grid.len()-1 || self.grid[y+1][x] == '#';
+                if left_filled && right_filled && above_filled && below_filled {
+                    holes += 1;
+                }
+            }
+        }
+        holes
+    }
+}
+
+
+fn get_all_possible_presents(blueprints: &Vec<Blueprint>, required: &Vec<i32>) -> Vec<Present> {
+    let mut presents: Vec<Present> = vec![];
+    for r in 0..required.len() {
+        if required[r] == 0 {
+            continue
+        }
+        for present in blueprints[r].possible_present_shapes() {
+            presents.push(present);
+        }
+    }
+    presents
 }
 
 fn decrement_required(i: usize, required: &mut Vec<i32>) {
@@ -161,7 +196,7 @@ fn parse_input(input: String) -> (Vec<Blueprint>, Vec<Space>, Vec<Vec<i32>>) {
     let double_new_line_split: Vec<&str> = input.split("\n\n").collect();
     let mut blueprints: Vec<Blueprint> = vec![];
     for i in 0..double_new_line_split.len()-1 {
-        blueprints.push(blueprint_from_input(double_new_line_split[i].split("\n").collect()));
+        blueprints.push(blueprint_from_input(i, double_new_line_split[i].split("\n").collect()));
     }
 
     let last = double_new_line_split[double_new_line_split.len()-1];
@@ -169,7 +204,7 @@ fn parse_input(input: String) -> (Vec<Blueprint>, Vec<Space>, Vec<Vec<i32>>) {
     (blueprints, spaces, required)
 }
 
-fn blueprint_from_input(input: Vec<&str>) -> Blueprint {
+fn blueprint_from_input(idx: usize, input: Vec<&str>) -> Blueprint {
     let mut lines: Vec<Vec<char>> = vec![];
     for i in 1..input.len() {
         let mut c_line: Vec<char> = vec![];
@@ -178,8 +213,7 @@ fn blueprint_from_input(input: Vec<&str>) -> Blueprint {
         }
         lines.push(c_line);
     }
-
-    Blueprint { grid: lines }
+    Blueprint { grid: lines, idx: idx }
 }
 
 fn space_from_input(input: String) -> (Space, Vec<i32>) {
@@ -227,7 +261,8 @@ mod tests {
                 vec!['#','#','#'],
                 vec!['#','.','.'],
                 vec!['#','#','#']
-            ]
+            ],
+            idx: 0
         };
         for p in b.possible_present_shapes() {
             print_grid(&p.grid);
