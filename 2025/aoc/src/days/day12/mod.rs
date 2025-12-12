@@ -79,15 +79,14 @@ impl Space {
         if !any_unsatisfied {
             return true // all placed, yay!
         }
-
-        // print_grid(&self.grid);
-        let possible_presents = get_all_possible_presents(blueprints, required);
+        // let possible_presents = get_all_possible_presents(blueprints, required);
+        let possible_presents = self.get_possible_presents_sorted_by_priority(blueprints, required);
         for present in possible_presents {
             let i = present.blueprint_idx;
             let (placed, (px, py)) = self.greedy_place_present(&present);
             if !placed {
-                // not place-able, try to place the next one.
-                continue
+                // not place-able. since un-placeable are all at the end of the "possible" list, we can safely assume that we are not going to succeed.
+                break
             }
             // it was successfully placed. decrement required and see if it works.
             decrement_required(i, required);
@@ -101,8 +100,22 @@ impl Space {
         false
     }
 
-    fn choose_next_present(&self, blueprint: &Vec<Blueprint>, required: Vec<i32>) {
+    fn get_possible_presents_sorted_by_priority(&mut self, blueprints: &Vec<Blueprint>, required: &Vec<i32>) -> Vec<Present> {
+        let mut all_possible = get_all_possible_presents(blueprints, required);
+        all_possible.sort_by(|a, b| {
+            self.greedy_place_present_count_holes(a).cmp(&self.greedy_place_present_count_holes(b))
+        });
+        all_possible
+    }
 
+    fn greedy_place_present_count_holes(&mut self, p: &Present) -> i32 {
+        let (placed, (px, py)) = self.greedy_place_present(p);
+        if !placed {
+            return i32::MAX
+        }
+        let holes = self.count_holes();
+        self.remove_present((px, py), p); // we dont actually want to place, just count what would happen *if* we placed it.
+        return holes;
     }
 
     // places present at first possible location.
