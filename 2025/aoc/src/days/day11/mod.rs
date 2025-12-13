@@ -17,7 +17,7 @@ impl Day for Day11 {
             device_map.insert(d.name.clone(), d);
         }
 
-        let path_ct = find_paths(&device_map, &"you".to_string(), &"out".to_string(), &mut HashSet::new(), &mut HashMap::new(), None);
+        let path_ct = find_paths(&device_map, &"you".to_string(), &"out".to_string(), &mut HashSet::new(), &mut HashMap::new());
         // find every path from "you" to "out". 
         path_ct
     }
@@ -72,75 +72,34 @@ impl Day for Day11 {
 
 fn find_paths_without_prohibited(graph: &HashMap<String, &Device>, start: &str, end: &str, prohibited: &Vec<&str>, memo: &mut HashMap<String, i64>) -> i64 {
     // i can 'prohibit visiting' by manipulating the visited map 
-    let visited: &mut HashSet<String> = &mut HashSet::new();
+    let do_not_visit: &mut HashSet<String> = &mut HashSet::new();
     for node in prohibited {
-        visited.insert(node.to_string().clone());
+        do_not_visit.insert(node.to_string().clone());
     }
-    let can_reach_map: HashMap<String, bool>= build_can_reach_map(graph, &end.to_string(), &prohibited);
-    println!("Can reach map size: {}, graph size: {}", can_reach_map.len(), graph.iter().count());
-    return find_paths(graph, &start.to_string(), &end.to_string(), visited, memo, Some(&can_reach_map));
+    return find_paths(graph, &start.to_string(), &end.to_string(), do_not_visit, memo);
 }
 
-fn build_can_reach_map(graph: &HashMap<String, &Device>, end: &String, prohibited: &Vec<&str>) -> HashMap<String, bool> {
-    let can_reach_map: &mut HashMap<String, bool> = &mut HashMap::new();
-    let visited = &mut HashSet::new();
-    for node in prohibited {
-        visited.insert(node.to_string());
-    }
-    for d_name in graph.keys() {
-        can_reach_map.insert(d_name.clone(), can_reach(graph, d_name, end, visited));
-    }
-    can_reach_map.clone()
-}
-
-fn can_reach(graph: &HashMap<String, &Device>, start: &String, end: &String, visited: &mut HashSet<String>) -> bool {
-    if start == end {
-        return true
-    }
-    visited.insert(start.clone());
-    let cur = graph.get(start).unwrap_or_else(|| {
-        panic!("Key `{start}` not found in map");
-    });
-    for way in &cur.outputs {
-        if can_reach(graph, way, end, visited) {
-            visited.remove(start);
-            return true
-        }
-    }
-    visited.remove(start);
-    return false
-}
-
-// directed graph that has possible cycles. 
+// directed graph. we assume it does not have cycles (for some reason). 
 // basically get all of the paths from node to another node.
-fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, visited: &mut HashSet<String>, memo: &mut HashMap<String, i64>, can_reach_map: Option<&HashMap<String, bool>>) -> i64 {
-    visited.insert(start.clone());
+fn find_paths(graph: &HashMap<String, &Device>, start: &String, end: &String, do_not_visit: &mut HashSet<String>, memo: &mut HashMap<String, i64>) -> i64 {
     if start == end {
-        visited.remove(start);
-        return 1 // we are at destination, we can stop.
+        return 1
     }
-    let memo_key = get_memo_key(start, end, visited);
+    let memo_key = get_memo_key(start, end, do_not_visit);
     if memo.contains_key(&memo_key) {
         return *memo.get(&memo_key).unwrap();
     }
 
-    if can_reach_map.is_some() {
-        if !can_reach_map.unwrap().get(start).unwrap() {
-            println!("Cannot reach {} from {}, terminating early", end, start);
-            return 0 // cannot reach destination from here.
-        }
-    }
     let cur = graph.get(start).unwrap_or_else(|| {
-        panic!("Key `{start}` not found in map");
+       panic!("Key `{start}` not found in map");
     });
     let mut total_paths: i64 = 0;
     for way in &cur.outputs {
-        if visited.contains(way) {
-            continue // already visited this node, re-entering would be a cycle.
+        if do_not_visit.contains(way) {
+            continue // do not visit this node.
         }
-        total_paths += find_paths(&graph, &way, &end, visited, memo, can_reach_map);
+        total_paths += find_paths(&graph, &way, &end, do_not_visit, memo);
     }
-    visited.remove(start);
     memo.insert(memo_key, total_paths);
     return total_paths;
 }
