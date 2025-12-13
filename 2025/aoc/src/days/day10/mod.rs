@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use good_lp::{constraint::eq, *};
 use crate::Day;
 
 pub struct Day10 {}
@@ -22,7 +22,7 @@ impl Day for Day10 {
         let mut min_presses = 0;
         for i in 0..machines.len() {
             let m: &mut Machine = machines.get_mut(i).unwrap();
-            let machine_min = m.min_buttons_to_reach_joltage(&mut m.get_buttons());
+            let machine_min = m.min_buttons_to_reach_joltage_solver(&mut m.get_buttons());
             println!("Calculated min {} for machine {} out of {}", machine_min, i+1, machines.len());
             min_presses += machine_min
         }
@@ -35,10 +35,7 @@ struct Machine {
     buttons: Vec<Button>,
     desired_joltage: Vec<i32>,
     lights: Vec<bool>,
-    joltage: Vec<i32> // maybe not needed.
 }
-
-
 
 // it is never beneficial to press a button twice in a row. it is never beneficial to enter a cycle. because we often would just end up where we started.
 impl Machine {
@@ -87,30 +84,37 @@ impl Machine {
         min_cost
     }
 
-    fn min_buttons_to_reach_joltage(&mut self, buttons: &mut Vec<Button>) -> i64 {
-        todo!();
+    fn min_buttons_to_reach_joltage_solver(&mut self, buttons: &mut Vec<Button>) -> i64 {
+        let mut vars = variables!();
+        let button_variables: Vec<VariableDefinition> = buttons.iter().map(|b| variable().min(0).integer().name(b.get_var_name())).collect();
+        let mut actual_variables: Vec<Variable> = vec![];
+        for bv in button_variables {
+            actual_variables.push(vars.add(bv));
+        }
 
+        let mut goal_exp: Expression = Expression::default();
+        for av in &actual_variables {
+            goal_exp = goal_exp + av;
+        }
 
+        // minimize sum of variables. 
+        let mut solution = vars.minimise(goal_exp.clone())
+            .using(default_solver);
 
+        for i in 0..self.desired_joltage.len() {
+            let equal_to = self.desired_joltage[i];
+            // let eq_const = 
+            let mut constraint_exp: Expression = Expression::default() - equal_to;
+            let button_indexes: Vec<usize> = buttons_with_index(i, buttons).iter().map(|b| b.idx).collect();
+            for b_idx in button_indexes {
+                constraint_exp += &actual_variables[b_idx];
+            }
+            let constraint = eq(0, constraint_exp);
+            solution = solution.clone().with(constraint);
+        }
+        let answer = solution.solve().unwrap();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return answer.eval(&goal_exp) as i64;
     }
 }
 
@@ -122,7 +126,14 @@ fn push_button(m: &mut Machine, b: &mut Button) {
 #[derive(PartialEq, Eq, Clone)]
 struct Button {
     lights_to_flip: Vec<usize>,
-    pushed: bool
+    pushed: bool,
+    idx: usize
+}
+
+impl Button {
+    fn get_var_name(&self) -> String {
+        format!("b{}", self.idx)
+    }
 }
 
 fn parse_machine(input: String) -> Machine {
@@ -146,13 +157,11 @@ fn parse_machine(input: String) -> Machine {
     let buttons: Vec<Button> = parse_buttons(input[light_end+2..jolt_beginning].trim().to_string());
     let raw_joltage = &input[jolt_beginning+1..input.len()-1];
     let joltages: Vec<i32> = raw_joltage.split(",").map(|j| j.parse::<i32>().unwrap()).collect();
-    let amt_joltages = joltages.len();
     Machine{
         lights: actual_lights,
         desired_lights,
         buttons: buttons,
-        desired_joltage: joltages,
-        joltage: vec![0; amt_joltages]
+        desired_joltage: joltages
     }
 }
 
@@ -163,14 +172,17 @@ fn index_of(input: &String, f: char) -> usize {
 fn parse_buttons(input: String) -> Vec<Button> {
     let mut buttons: Vec<Button> = vec![];
     let spl = input.split(" ");
+    let mut button_idx = 0;
     for rb in spl.into_iter() {
         // trim front and back parentheses.
         let actual = &rb.to_string()[1..rb.len()-1];
         let button_lights: Vec<usize> = actual.split(",").map(|l| l.parse::<usize>().unwrap()).collect();
         buttons.push(Button{
             lights_to_flip: button_lights,
-            pushed: false
-        })
+            pushed: false,
+            idx: button_idx.clone()
+        });
+        button_idx+=1;
     }
     buttons
 }
@@ -191,13 +203,8 @@ fn buttons_with_index(idx: usize, buttons: &Vec<Button>) -> Vec<Button> {
         .collect()
 }
 
-struct Joltage {
-    idx: usize,
-    desired_value: i32
-}
-
 // so what is the effiicent solutoin here? some type of lcm i think
-
+#[allow(unused_imports)]
 mod tests {
     use std::collections::HashMap;
 
@@ -207,7 +214,7 @@ mod tests {
     fn test_sample_2() {
         let t = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}".to_string();
         let mut m = parse_machine(t);
-        let min = m.min_buttons_to_reach_joltage(&mut m.get_buttons());
+        let min = m.min_buttons_to_reach_joltage_solver(&mut m.get_buttons());
         assert_eq!(10, min);
     }
 }

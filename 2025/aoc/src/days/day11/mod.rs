@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, path};
+use std::{collections::{HashMap, HashSet}};
 
 use crate::Day;
 
@@ -18,7 +18,6 @@ impl Day for Day11 {
         }
 
         let path_ct = find_paths(&device_map, &"you".to_string(), &"out".to_string(), &mut HashSet::new(), &mut HashMap::new());
-        // find every path from "you" to "out". 
         path_ct
     }
 
@@ -33,7 +32,6 @@ impl Day for Day11 {
 
         let memo: &mut HashMap<String, i64> = &mut HashMap::new();
         // ok so i need:
-        
         // d_o = dac to out (no fft or svr in path)
         let d_o = find_paths_without_prohibited(&graph, &"dac", &"out", &vec!["fft", "svr"], memo);
         println!("Calculated {} paths from {} to {} without {} or {}", d_o, "dac", "out", "fft", "svr");

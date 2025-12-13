@@ -288,6 +288,7 @@ fn print_grid(grid: &Vec<Vec<char>>) {
     println!();
 }
 
+#[allow(unused_imports)]
 mod tests {
     use crate::days::day12::{Blueprint, print_grid};
 
