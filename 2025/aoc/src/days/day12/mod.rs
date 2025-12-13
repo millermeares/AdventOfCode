@@ -1,5 +1,3 @@
-use std::any;
-
 use crate::Day;
 
 pub struct Day12 {}
