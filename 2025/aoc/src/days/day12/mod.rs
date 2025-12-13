@@ -6,10 +6,10 @@ pub struct Day12 {}
 
 impl Day for Day12 {
     fn solve_1(&self, input: String) -> i64 {
-        let (blueprints, mut spaces, mut required) = parse_input(input);
+        let (blueprints, spaces, mut required) = parse_input(input);
         let mut can_fit_ct = 0;
         for i in 0..spaces.len() {
-            let can_fit = spaces[i].can_place_presents_to_satisfy_required(&blueprints, &mut required[i]);
+            let can_fit = spaces[i].quick_check_can_place_presents_satisfy_required(&blueprints, &required[i]);
             println!("Space {} can fit its presents? {}", i, can_fit);
             if can_fit {
                 can_fit_ct += 1;
@@ -38,6 +38,18 @@ impl Blueprint {
         let two = flip90(&one);
         let three = flip90(&two);
         vec![Present{ grid: original, blueprint_idx: self.idx}, Present{ grid: one, blueprint_idx: self.idx }, Present { grid: two, blueprint_idx: self.idx }, Present { grid: three, blueprint_idx: self.idx }]
+    }
+
+    fn count_filled(&self) -> i32 {
+        let mut filled = 0;
+        for y in 0..self.grid.len() {
+            for x in 0..self.grid[y].len() {
+                if self.grid[y][x] == '#' {
+                    filled += 1;
+                }
+            }
+        }
+        filled
     }
 }
 
@@ -72,6 +84,18 @@ struct Space {
 }
 
 impl Space {
+    fn area(&self) -> i32 {
+        return self.grid.len() as i32 * self.grid[0].len() as i32;
+    }
+    fn quick_check_can_place_presents_satisfy_required(&self, blueprints: &Vec<Blueprint>, required: &Vec<i32>) -> bool {
+        let total_area = self.area();
+        let mut total_required = 0;
+        for idx in 0..required.len() {
+            total_required += blueprints[idx].count_filled() * required[idx];
+        }
+        total_area >= total_required
+    }
+
     fn can_place_presents_to_satisfy_required(&mut self, blueprints: &Vec<Blueprint>, required: &mut Vec<i32>) -> bool {
         print_grid(&self.grid);
 
